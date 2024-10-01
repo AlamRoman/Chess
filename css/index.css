@@ -1,0 +1,36 @@
+body{
+    background-color: #f8e7bb;
+}
+
+.square{
+    width: 70px;
+    height: 70px;
+}
+
+.board_container{
+    display: grid;
+    justify-content: center;
+    align-items: center;
+}
+
+.white{
+    background-color: #ffce9e;
+}
+
+.black{
+    background-color: #d18b47;
+}
+
+table, td{
+    border: 1px solid black;
+    border-collapse: collapse;
+    margin: 0px;
+}
+
+table{
+    border: 10px solid #654321;
+}
+
+td{
+    text-align: center;
+}
