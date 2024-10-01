@@ -1,11 +1,4 @@
 
-/*
-const w_b_img = new Image();
-w_b_img.src = "resources/pieces/w_b.png";
-
-document.getElementById("sq58").appendChild(w_b_img);
-*/
-
 const FILE = 8;
 const RANK = 8;
 const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
@@ -13,23 +6,7 @@ const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 //create the empty board
 const board = Array(FILE * RANK).fill("");
 
-/*
-const pieces_img_name = [
-    "b_b",
-    "b_k",
-    "b_n",
-    "b_p",
-    "b_q",
-    "b_r",
-    "w_b",
-    "w_k",
-    "w_n",
-    "w_p",
-    "w_q",
-    "w_r"
-];
-*/
-
+//piaces name and their image name
 const pieces_name_to_img_name = {
     "r": "b_r",
     "n": "b_n",
@@ -54,12 +31,6 @@ for (let img_name of Object.values(pieces_name_to_img_name)) {
     img.src = "resources/pieces/" + img_name + ".png";
     pieces_img.set(img_name , img);
 }
-
-/*
-for (let i = 0; i < pieces_name.length; i++) {
-    document.getElementById("sq"+i).appendChild(pieces_img.get(pieces_name[i]));
-}
-*/
 
 //update the DOM board from board array
 function update_board_view(board) {
