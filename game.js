@@ -3,7 +3,7 @@ const FILE = 8;
 const RANK = 8;
 const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 
-let selected_square = {
+let previous_selected_square = {
     dom : null,
     index: null
 }
@@ -64,7 +64,7 @@ function update_board_view(board) {
             img = pieces_img.get(pieces_name_to_img_name[board[i]]).cloneNode();
 
             square.appendChild(img);
-            img.classList.add("piece-Img");
+            img.classList.add("piece-img");
         }
     }
 }
@@ -101,7 +101,7 @@ function isUpperCase(char) {
 
 function squareClicked(event) {
 
-    if (event.target.classList.contains("piece-Img")) {
+    if (event.target.classList.contains("piece-img")) {
         dom_sq = event.target.parentNode;
     }else{
         dom_sq = event.target;
@@ -116,33 +116,33 @@ function squareClicked(event) {
     }
 
     //unselect if clicked previous selected square
-    if(selected_square.dom == dom_sq){
-        selected_square.dom.classList.remove("selected");
-        selected_square.dom = null;
-        selected_square.index = null;
+    if(previous_selected_square.dom == dom_sq){
+        previous_selected_square.dom.classList.remove("selected");
+        previous_selected_square.dom = null;
+        previous_selected_square.index = null;
         
     }else if (isFriendlyPiece(board[square_index], player_color)) {
 
         //unselect previous selected square
-        if (selected_square.dom != null) {
-            selected_square.dom.classList.remove("selected");
-            selected_square.index = null;
+        if (previous_selected_square.dom != null) {
+            previous_selected_square.dom.classList.remove("selected");
+            previous_selected_square.index = null;
         }
 
         dom_sq.classList.add("selected");
 
-        selected_square.dom = dom_sq;
-        selected_square.index = square_index;
+        previous_selected_square.dom = dom_sq;
+        previous_selected_square.index = square_index;
     }else{
-        if (!isFriendlyPiece(board[square_index], player_color) && board[square_index] != "" && selected_square.index == null) {
+        if (!isFriendlyPiece(board[square_index], player_color) && board[square_index] != "" && previous_selected_square.index == null) {
             return;
         }
 
-        makeMove(selected_square.index, square_index);
+        makeMove(previous_selected_square.index, square_index);
 
-        selected_square.dom.classList.remove("selected");
-        selected_square.dom = null;
-        selected_square.index = null;
+        previous_selected_square.dom.classList.remove("selected");
+        previous_selected_square.dom = null;
+        previous_selected_square.index = null;
     }
 
 }
@@ -171,14 +171,28 @@ function isFriendlyPiece(piece, your_color) {
 }
 
 function makeMove(from, to) {
-    console.log(from, to);
+    //TODO: control if the move is valid
+
+    movePiece(from, to);
+
+    computerMove();
+
+    update_board_view(board);
+}
+
+function computerMove() {
+    //TODO: make intelligent computer move, first try implementi random move with legal moves
+    
+    let piece_to_move = board[11];
+    board[11] = "";
+    board[27] = piece_to_move;
+    
+}
+
+function movePiece(from, to) {
     let piece_to_move = board[from];
     board[from] = "";
     board[to] = piece_to_move;
-
-    console.log(board);
-
-    update_board_view(board);
 }
 
 fen_to_board(board);

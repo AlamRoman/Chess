@@ -41,9 +41,9 @@ td{
     background-color: #ffcc3f;
 }
 
-.piece-Img{
+.piece-img{
     margin: 0px;
     vertical-align: middle;
     height: auto;
-
+    user-select: none;
 }
