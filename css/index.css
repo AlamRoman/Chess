@@ -35,6 +35,7 @@ td{
     text-align: center;
     vertical-align: middle;
     padding: 0;
+    position: relative;
 }
 
 .selected{
@@ -46,4 +47,18 @@ td{
     vertical-align: middle;
     height: auto;
     user-select: none;
+}
+
+.possibleMove > div{
+    width: 50px;
+    height: 50px;
+    background-color: rgba(255, 208, 55, 0.493);
+    border-radius: 50%;
+    display: inline-block;
+    align-items: center;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
 }

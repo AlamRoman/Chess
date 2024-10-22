@@ -3,13 +3,26 @@ const FILE = 8;
 const RANK = 8;
 const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 
-let previous_selected_square = {
+//create the empty board
+const board = Array(FILE * RANK).fill("");
+
+//hashmap with pieces name and their images
+let pieces_img = new Map();
+
+let Previous_selected_square = {
     dom : null,
     index: null
 }
 
+let Move = {
+    from : null,
+    to : null
+}
+
 let player_color = "w";
 let enemy_color = "b";
+
+let valid_squares_shown = [];
 
 function addListenerToSquares() {
     const DOM_squares = Array.from(document.getElementsByClassName("square"));
@@ -20,9 +33,6 @@ function addListenerToSquares() {
 }
 
 addListenerToSquares();
-
-//create the empty board
-const board = Array(FILE * RANK).fill("");
 
 //piaces name and their image name
 const pieces_name_to_img_name = {
@@ -40,14 +50,17 @@ const pieces_name_to_img_name = {
     "K": "w_k"
 } 
 
-//hashmap with pieces name and their images
-let pieces_img = new Map();
+function load_img_in_array(pieces_name_to_img_name) {
+    //load images in the hashmap
+    for (let img_name of Object.values(pieces_name_to_img_name)) {
+        let img = new Image();
+        img.src = "resources/pieces/" + img_name + ".png";
+        pieces_img.set(img_name , img);
+    }
 
-//load images in the hashmap
-for (let img_name of Object.values(pieces_name_to_img_name)) {
     let img = new Image();
-    img.src = "resources/pieces/" + img_name + ".png";
-    pieces_img.set(img_name , img);
+    img.src = "resources/question-mark.png";
+    pieces_img.set("question-mark" , img);
 }
 
 //update the DOM board from board array
@@ -61,7 +74,13 @@ function update_board_view(board) {
 
         if(board[i] !== ""){
 
-            img = pieces_img.get(pieces_name_to_img_name[board[i]]).cloneNode();
+            var img;
+
+            try {
+                img = pieces_img.get(pieces_name_to_img_name[board[i]]).cloneNode();
+            } catch (error) {
+                img = pieces_img.get("question-mark").cloneNode();
+            }
 
             square.appendChild(img);
             img.classList.add("piece-img");
@@ -101,7 +120,7 @@ function isUpperCase(char) {
 
 function squareClicked(event) {
 
-    if (event.target.classList.contains("piece-img")) {
+    if (event.target.classList.contains("piece-img") || event.target.classList.contains("circle")) {
         dom_sq = event.target.parentNode;
     }else{
         dom_sq = event.target;
@@ -116,33 +135,44 @@ function squareClicked(event) {
     }
 
     //unselect if clicked previous selected square
-    if(previous_selected_square.dom == dom_sq){
-        previous_selected_square.dom.classList.remove("selected");
-        previous_selected_square.dom = null;
-        previous_selected_square.index = null;
+    if(Previous_selected_square.dom == dom_sq){
+        Previous_selected_square.dom.classList.remove("selected");
+        Previous_selected_square.dom = null;
+        Previous_selected_square.index = null;
+
+        hide_shown_valid_moves_in_html();
         
     }else if (isFriendlyPiece(board[square_index], player_color)) {
 
         //unselect previous selected square
-        if (previous_selected_square.dom != null) {
-            previous_selected_square.dom.classList.remove("selected");
-            previous_selected_square.index = null;
+        if (Previous_selected_square.dom != null) {
+            Previous_selected_square.dom.classList.remove("selected");
+            Previous_selected_square.index = null;
         }
 
+        hide_shown_valid_moves_in_html();
+
+        //select clicked square
         dom_sq.classList.add("selected");
 
-        previous_selected_square.dom = dom_sq;
-        previous_selected_square.index = square_index;
+        let moves = genarate_moves(board[square_index],square_index);
+
+        console.log(moves);
+
+        show_valid_moves_in_html(moves);
+
+        Previous_selected_square.dom = dom_sq;
+        Previous_selected_square.index = square_index;
     }else{
-        if (!isFriendlyPiece(board[square_index], player_color) && board[square_index] != "" && previous_selected_square.index == null) {
+        if (!isFriendlyPiece(board[square_index], player_color) && board[square_index] != "" && Previous_selected_square.index == null) {
             return;
         }
 
-        makeMove(previous_selected_square.index, square_index);
+        makeMove(Previous_selected_square.index, square_index);
 
-        previous_selected_square.dom.classList.remove("selected");
-        previous_selected_square.dom = null;
-        previous_selected_square.index = null;
+        Previous_selected_square.dom.classList.remove("selected");
+        Previous_selected_square.dom = null;
+        Previous_selected_square.index = null;
     }
 
 }
@@ -194,6 +224,117 @@ function movePiece(from, to) {
     board[from] = "";
     board[to] = piece_to_move;
 }
+
+function genarate_moves(piece, position) {
+
+    let moves = new Array();
+
+    if (piece == "P") {//white pawn
+
+        //pawn move 1 square forward
+        moves.push({from: position, to: position-8});
+
+        //pawn move 2 square forward if never moved
+        if (position >= 48 && position <= 55) {
+            moves.push({from: position, to: position-16});
+        }
+
+    }else if(piece == "p"){//black pawn
+
+        //pawn move 1 square forward
+        moves.push({from: position, to: position+8});
+
+        //pawn move 2 square forward if never moved
+        if (position >= 8 && position <= 15) {
+            moves.push({from: position, to: position+16});
+        }
+
+    }else if(piece == "R"){
+        const y = Math.floor(position / 8); // Row
+        const x = position % 8;              // Column
+
+        // Rook movement logic (up, down, left, right)
+        // Move down
+        for (let nx = x + 1; nx < 8; nx++) {
+            const newIndex = y * 8 + nx;
+            if (board[newIndex] == "") {
+                moves.push({from: position, to: newIndex}); // Empty square
+            }else if(!isFriendlyPiece(board[newIndex], "w")){
+                moves.push({from: position, to: newIndex});
+                break;
+            }else {
+                break; // Blocked by same color piece
+            }
+        }
+
+        // Move up
+        for (let nx = x - 1; nx >= 0; nx--) {
+            const newIndex = y * 8 + nx;
+            if (board[newIndex] == "") {
+                moves.push({from: position, to: newIndex});  // Empty square
+            }else if(!isFriendlyPiece(board[newIndex], "w")){
+                moves.push({from: position, to: newIndex});
+                break;
+            }else {
+                break; // Blocked by same color piece
+            }
+        }
+
+        // Move right
+        for (let ny = y + 1; ny < 8; ny++) {
+            const newIndex = ny * 8 + x;
+            if (board[newIndex] == "") {
+                moves.push({from: position, to: newIndex});  // Empty square
+            }else if(!isFriendlyPiece(board[newIndex], "w")){
+                moves.push({from: position, to: newIndex});
+                break;
+            }else {
+                break; // Blocked by same color piece
+            }
+        }
+
+        // Move left
+        for (let ny = y - 1; ny >= 0; ny--) {
+            const newIndex = ny * 8 + x;
+            if (board[newIndex] == "") {
+                moves.push({from: position, to: newIndex});  // Empty square
+            }else if(!isFriendlyPiece(board[newIndex], "w")){
+                moves.push({from: position, to: newIndex});
+                break;
+            } else {
+                break; // Blocked by same color piece
+            }
+        }
+    }
+
+    return moves;
+}
+
+function show_valid_moves_in_html(moves) {
+    moves.forEach(move=>{
+        sqID = move.to;
+
+        var square = document.getElementById("sq"+sqID);
+
+        square.innerHTML += "<div class=\"circle\"></div>";
+        square.classList.add("possibleMove");
+
+        valid_squares_shown.push("sq"+sqID);
+    });
+}
+
+function hide_shown_valid_moves_in_html() {
+
+    for (let i = 0; i < valid_squares_shown.length; i++) {
+        let sq = valid_squares_shown[i];
+        
+        square = document.getElementById(sq).classList.remove("possibleMove");
+    }
+
+    valid_squares_shown = [];
+}
+
+load_img_in_array(pieces_name_to_img_name) 
 
 fen_to_board(board);
 
