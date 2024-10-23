@@ -14,9 +14,11 @@ let Previous_selected_square = {
     index: null
 }
 
-let Move = {
-    from : null,
-    to : null
+class Move {
+    constructor(from, to){
+        this.from = from;
+        this.to = to;
+    }
 }
 
 let player_color = "w";
@@ -120,7 +122,7 @@ function isUpperCase(char) {
 
 function squareClicked(event) {
 
-    if (event.target.classList.contains("piece-img") || event.target.classList.contains("circle")) {
+    if (event.target.classList.contains("piece-img") || event.target.classList.contains("high-light")) {
         dom_sq = event.target.parentNode;
     }else{
         dom_sq = event.target;
@@ -164,8 +166,8 @@ function squareClicked(event) {
         Previous_selected_square.dom = dom_sq;
         Previous_selected_square.index = square_index;
     }else{
-        if (!isFriendlyPiece(board[square_index], player_color) && board[square_index] != "" && Previous_selected_square.index == null) {
-            return;
+        if (isEnemyPiece(board[square_index], player_color) && Previous_selected_square.index == null) {
+            return;//capture
         }
 
         makeMove(Previous_selected_square.index, square_index);
@@ -200,6 +202,16 @@ function isFriendlyPiece(piece, your_color) {
 
 }
 
+function isEnemyPiece(piece, your_color) {
+
+    //there is no piece
+    if(piece == ""){
+        return false;
+    }
+
+    return !isFriendlyPiece(piece, your_color);
+}
+
 function makeMove(from, to) {
     //TODO: control if the move is valid
 
@@ -213,10 +225,6 @@ function makeMove(from, to) {
 function computerMove() {
     //TODO: make intelligent computer move, first try implementi random move with legal moves
     
-    let piece_to_move = board[11];
-    board[11] = "";
-    board[27] = piece_to_move;
-    
 }
 
 function movePiece(from, to) {
@@ -229,63 +237,41 @@ function genarate_moves(piece, position) {
 
     let moves = new Array();
 
+    position = parseInt(position);
+
     if (piece == "P") {//white pawn
 
         //pawn move 1 square forward
-        moves.push({from: position, to: position-8});
+        moves.push(new Move(position, position - 8));
 
         //pawn move 2 square forward if never moved
         if (position >= 48 && position <= 55) {
-            moves.push({from: position, to: position-16});
+            moves.push(new Move(position, position - 16));
         }
 
     }else if(piece == "p"){//black pawn
 
         //pawn move 1 square forward
-        moves.push({from: position, to: position+8});
+        moves.push(new Move(position, position + 8 ));
 
         //pawn move 2 square forward if never moved
         if (position >= 8 && position <= 15) {
-            moves.push({from: position, to: position+16});
+            moves.push(new Move(position, position + 16));
         }
 
-    }else if(piece == "R"){
+    }else if(piece == "R" || piece == "r"){//the rooooooooooooook
+
         const y = Math.floor(position / 8); // Row
         const x = position % 8;              // Column
+        const pieceColor = isUpperCase(piece) ? "w" : "b";
 
         // Rook movement logic (up, down, left, right)
-        // Move down
+        // Move right
         for (let nx = x + 1; nx < 8; nx++) {
             const newIndex = y * 8 + nx;
             if (board[newIndex] == "") {
                 moves.push({from: position, to: newIndex}); // Empty square
-            }else if(!isFriendlyPiece(board[newIndex], "w")){
-                moves.push({from: position, to: newIndex});
-                break;
-            }else {
-                break; // Blocked by same color piece
-            }
-        }
-
-        // Move up
-        for (let nx = x - 1; nx >= 0; nx--) {
-            const newIndex = y * 8 + nx;
-            if (board[newIndex] == "") {
-                moves.push({from: position, to: newIndex});  // Empty square
-            }else if(!isFriendlyPiece(board[newIndex], "w")){
-                moves.push({from: position, to: newIndex});
-                break;
-            }else {
-                break; // Blocked by same color piece
-            }
-        }
-
-        // Move right
-        for (let ny = y + 1; ny < 8; ny++) {
-            const newIndex = ny * 8 + x;
-            if (board[newIndex] == "") {
-                moves.push({from: position, to: newIndex});  // Empty square
-            }else if(!isFriendlyPiece(board[newIndex], "w")){
+            }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
                 moves.push({from: position, to: newIndex});
                 break;
             }else {
@@ -294,15 +280,250 @@ function genarate_moves(piece, position) {
         }
 
         // Move left
+        for (let nx = x - 1; nx >= 0; nx--) {
+            const newIndex = y * 8 + nx;
+            if (board[newIndex] == "") {
+                moves.push({from: position, to: newIndex});  // Empty square
+            }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
+                moves.push({from: position, to: newIndex});
+                break;
+            }else {
+                break; // Blocked by same color piece
+            }
+        }
+
+        // Move down
+        for (let ny = y + 1; ny < 8; ny++) {
+            const newIndex = ny * 8 + x;
+            if (board[newIndex] == "") {
+                moves.push({from: position, to: newIndex});  // Empty square
+            }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
+                moves.push({from: position, to: newIndex});
+                break;
+            }else {
+                break; // Blocked by same color piece
+            }
+        }
+
+        // Move up
         for (let ny = y - 1; ny >= 0; ny--) {
             const newIndex = ny * 8 + x;
             if (board[newIndex] == "") {
                 moves.push({from: position, to: newIndex});  // Empty square
-            }else if(!isFriendlyPiece(board[newIndex], "w")){
+            }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
                 moves.push({from: position, to: newIndex});
                 break;
             } else {
                 break; // Blocked by same color piece
+            }
+        }
+    }else if(piece == "B" || piece == "b"){//bishop
+
+        const y = Math.floor(position / 8); // Row
+        const x = position % 8;              // Column
+        const pieceColor = isUpperCase(piece) ? "w" : "b";
+
+        // Bishop movement logic (up-left, up-right, bottom-left, bottom-right)
+        // Move up-left
+        for (let ny = y - 1, nx = x-1; ny>= 0 && nx >= 0; ny--,nx--) {
+            const newIndex = ny * 8 + nx;
+            if (board[newIndex] == "") {
+                moves.push({from: position, to: newIndex}); // Empty square
+            }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
+                moves.push({from: position, to: newIndex});
+                break;
+            }else {
+                break; // Blocked by same color piece
+            }
+        }
+
+        // Move up-right
+        for (let ny = y - 1, nx = x+1; ny>= 0 && nx < 8; ny--,nx++) {
+            const newIndex = ny * 8 + nx;
+            if (board[newIndex] == "") {
+                moves.push({from: position, to: newIndex}); // Empty square
+            }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
+                moves.push({from: position, to: newIndex});
+                break;
+            }else {
+                break; // Blocked by same color piece
+            }
+        }
+
+        // Move bottom-left
+        for (let ny = y + 1, nx = x-1; ny < 8 && nx >= 0; ny++,nx--) {
+            const newIndex = ny * 8 + nx;
+            if (board[newIndex] == "") {
+                moves.push({from: position, to: newIndex}); // Empty square
+            }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
+                moves.push({from: position, to: newIndex});
+                break;
+            }else {
+                break; // Blocked by same color piece
+            }
+        }
+
+        // Move bottom-right
+        for (let ny = y + 1, nx = x+1; ny < 8 && nx < 8; ny++,nx++) {
+            const newIndex = ny * 8 + nx;
+            if (board[newIndex] == "") {
+                moves.push({from: position, to: newIndex}); // Empty square
+            }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
+                moves.push({from: position, to: newIndex});
+                break;
+            }else {
+                break; // Blocked by same color piece
+            }
+        }
+        
+    }else if(piece == "Q" || piece == "q"){//queen
+
+        const y = Math.floor(position / 8); // Row
+        const x = position % 8;              // Column
+        const pieceColor = isUpperCase(piece) ? "w" : "b";
+
+        // Rook movement logic (up, down, left, right)
+        // Move right
+        for (let nx = x + 1; nx < 8; nx++) {
+            const newIndex = y * 8 + nx;
+            if (board[newIndex] == "") {
+                moves.push({from: position, to: newIndex}); // Empty square
+            }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
+                moves.push({from: position, to: newIndex});
+                break;
+            }else {
+                break; // Blocked by same color piece
+            }
+        }
+
+        // Move left
+        for (let nx = x - 1; nx >= 0; nx--) {
+            const newIndex = y * 8 + nx;
+            if (board[newIndex] == "") {
+                moves.push({from: position, to: newIndex});  // Empty square
+            }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
+                moves.push({from: position, to: newIndex});
+                break;
+            }else {
+                break; // Blocked by same color piece
+            }
+        }
+
+        // Move down
+        for (let ny = y + 1; ny < 8; ny++) {
+            const newIndex = ny * 8 + x;
+            if (board[newIndex] == "") {
+                moves.push({from: position, to: newIndex});  // Empty square
+            }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
+                moves.push({from: position, to: newIndex});
+                break;
+            }else {
+                break; // Blocked by same color piece
+            }
+        }
+
+        // Move up
+        for (let ny = y - 1; ny >= 0; ny--) {
+            const newIndex = ny * 8 + x;
+            if (board[newIndex] == "") {
+                moves.push({from: position, to: newIndex});  // Empty square
+            }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
+                moves.push({from: position, to: newIndex});
+                break;
+            } else {
+                break; // Blocked by same color piece
+            }
+        }
+
+        // Move up-left
+        for (let ny = y - 1, nx = x-1; ny>= 0 && nx >= 0; ny--,nx--) {
+            const newIndex = ny * 8 + nx;
+            if (board[newIndex] == "") {
+                moves.push({from: position, to: newIndex}); // Empty square
+            }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
+                moves.push({from: position, to: newIndex});
+                break;
+            }else {
+                break; // Blocked by same color piece
+            }
+        }
+
+        // Move up-right
+        for (let ny = y - 1, nx = x+1; ny>= 0 && nx < 8; ny--,nx++) {
+            const newIndex = ny * 8 + nx;
+            if (board[newIndex] == "") {
+                moves.push({from: position, to: newIndex}); // Empty square
+            }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
+                moves.push({from: position, to: newIndex});
+                break;
+            }else {
+                break; // Blocked by same color piece
+            }
+        }
+
+        // Move bottom-left
+        for (let ny = y + 1, nx = x-1; ny < 8 && nx >= 0; ny++,nx--) {
+            const newIndex = ny * 8 + nx;
+            if (board[newIndex] == "") {
+                moves.push({from: position, to: newIndex}); // Empty square
+            }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
+                moves.push({from: position, to: newIndex});
+                break;
+            }else {
+                break; // Blocked by same color piece
+            }
+        }
+
+        // Move bottom-right
+        for (let ny = y + 1, nx = x+1; ny < 8 && nx < 8; ny++,nx++) {
+            const newIndex = ny * 8 + nx;
+            if (board[newIndex] == "") {
+                moves.push({from: position, to: newIndex}); // Empty square
+            }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
+                moves.push({from: position, to: newIndex});
+                break;
+            }else {
+                break; // Blocked by same color piece
+            }
+        }
+    }else if(piece == "K"){
+        const y = Math.floor(position / 8); // Row
+        const x = position % 8;              // Column
+        const pieceColor = isUpperCase(piece) ? "w" : "b";
+
+        //up
+        if (y - 1 >= 0) {
+            const newIndex = (y-1) * 8 + x;
+
+            if (!isFriendlyPiece(board[newIndex], pieceColor)) {
+                moves.push({from: position, to: newIndex});
+            }
+        }
+        
+        //down
+        if (y + 1 < 8) {
+            const newIndex = (y + 1) * 8 + x;
+
+            if (!isFriendlyPiece(board[newIndex], pieceColor)) {
+                moves.push({from: position, to: newIndex});
+            }
+        }
+        
+        //left
+        if (x - 1 >= 0) {
+            const newIndex = y * 8 + (x - 1);
+
+            if (!isFriendlyPiece(board[newIndex], pieceColor)) {
+                moves.push({from: position, to: newIndex});
+            }
+        }
+        
+        //right
+        if (x + 1 < 8) {
+            const newIndex = y * 8 + (x + 1);
+
+            if (!isFriendlyPiece(board[newIndex], pieceColor)) {
+                moves.push({from: position, to: newIndex});
             }
         }
     }
@@ -316,7 +537,7 @@ function show_valid_moves_in_html(moves) {
 
         var square = document.getElementById("sq"+sqID);
 
-        square.innerHTML += "<div class=\"circle\"></div>";
+        square.innerHTML += "<div class=\"high-light\"></div>";
         square.classList.add("possibleMove");
 
         valid_squares_shown.push("sq"+sqID);
@@ -328,7 +549,17 @@ function hide_shown_valid_moves_in_html() {
     for (let i = 0; i < valid_squares_shown.length; i++) {
         let sq = valid_squares_shown[i];
         
-        square = document.getElementById(sq).classList.remove("possibleMove");
+        square = document.getElementById(sq);
+
+        square.classList.remove("possibleMove");
+
+        let divs = square.getElementsByClassName("high-light");
+
+        //remove high-lighted border
+        for (let i = 0; i < divs.length; i++) {
+            divs[i].remove();
+        }
+        
     }
 
     valid_squares_shown = [];
