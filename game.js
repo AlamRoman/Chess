@@ -34,8 +34,6 @@ function addListenerToSquares() {
     });
 }
 
-addListenerToSquares();
-
 //piaces name and their image name
 const pieces_name_to_img_name = {
     "r": "b_r",
@@ -157,7 +155,7 @@ function squareClicked(event) {
         //select clicked square
         dom_sq.classList.add("selected");
 
-        let moves = genarate_moves(board[square_index],square_index);
+        let moves = generate_moves(board[square_index],square_index);
 
         console.log(moves);
 
@@ -168,9 +166,20 @@ function squareClicked(event) {
     }else{
         if (isEnemyPiece(board[square_index], player_color) && Previous_selected_square.index == null) {
             return;//capture
+        }else if(Previous_selected_square.index == null){
+            return;
         }
 
         makeMove(Previous_selected_square.index, square_index);
+
+        //simulate 2 player game
+        if (player_color == "w") {
+            player_color = "b";
+            enemy_color = "W";
+        }else{
+            player_color = "w";
+            enemy_color = "b";
+        }
 
         Previous_selected_square.dom.classList.remove("selected");
         Previous_selected_square.dom = null;
@@ -233,7 +242,7 @@ function movePiece(from, to) {
     board[to] = piece_to_move;
 }
 
-function genarate_moves(piece, position) {
+function generate_moves(piece, position) {
 
     let moves = new Array();
 
@@ -241,22 +250,68 @@ function genarate_moves(piece, position) {
 
     if (piece == "P") {//white pawn
 
-        //pawn move 1 square forward
-        moves.push(new Move(position, position - 8));
+        const y = Math.floor(position / 8); // Row
+        const x = position % 8;              // Column
 
-        //pawn move 2 square forward if never moved
-        if (position >= 48 && position <= 55) {
-            moves.push(new Move(position, position - 16));
+        //pawn move 1 square forward
+        if (board[position - 8] == "") {
+            moves.push(new Move(position, position - 8));
+
+            //pawn move 2 square forward if never moved
+            if (position >= 48 && position <= 55) {
+                moves.push(new Move(position, position - 16));
+            }
+        }
+
+        if (isValidPosition(x-1, y-1)) {
+
+            const newIndex = (y-1) * 8 + (x-1);
+
+            if (isEnemyPiece(board[newIndex], "w")) {
+                moves.push(new Move(position, newIndex));
+            }
+        }
+
+        if (isValidPosition(x+1, y-1)) {
+            
+            const newIndex = (y-1) * 8 + (x+1);
+
+            if (isEnemyPiece(board[newIndex], "w")) {
+                moves.push(new Move(position, newIndex));
+            }
         }
 
     }else if(piece == "p"){//black pawn
 
-        //pawn move 1 square forward
-        moves.push(new Move(position, position + 8 ));
+        const y = Math.floor(position / 8); // Row
+        const x = position % 8;              // Column
 
-        //pawn move 2 square forward if never moved
-        if (position >= 8 && position <= 15) {
-            moves.push(new Move(position, position + 16));
+        //pawn move 1 square forward
+        if (board[position + 8] == "") {
+            moves.push(new Move(position, position + 8 ));
+
+            //pawn move 2 square forward if never moved
+            if (position >= 8 && position <= 15) {
+                moves.push(new Move(position, position + 16));
+            }
+        }
+
+        if (isValidPosition(x-1, y+1)) {
+
+            const newIndex = (y+1) * 8 + (x-1);
+
+            if (isEnemyPiece(board[newIndex], "b")) {
+                moves.push(new Move(position, newIndex));
+            }
+        }
+
+        if (isValidPosition(x+1, y+1)) {
+            
+            const newIndex = (y+1) * 8 + (x+1);
+
+            if (isEnemyPiece(board[newIndex], "b")) {
+                moves.push(new Move(position, newIndex));
+            }
         }
 
     }else if(piece == "R" || piece == "r"){//the rooooooooooooook
@@ -486,7 +541,7 @@ function genarate_moves(piece, position) {
                 break; // Blocked by same color piece
             }
         }
-    }else if(piece == "K"){
+    }else if(piece == "K" || piece == "k"){//king
         const y = Math.floor(position / 8); // Row
         const x = position % 8;              // Column
         const pieceColor = isUpperCase(piece) ? "w" : "b";
@@ -526,9 +581,79 @@ function genarate_moves(piece, position) {
                 moves.push({from: position, to: newIndex});
             }
         }
+
+        //up-left
+        if (x - 1 >= 0 && y - 1 >= 0) {
+            
+            const newIndex = (y - 1) * 8 + (x - 1);
+
+            if (!isFriendlyPiece(board[newIndex], pieceColor)) {
+                moves.push({from: position, to: newIndex});
+            }
+        }
+
+        //up-right
+        if (x + 1 < 8 && y - 1 >= 0) {
+            
+            const newIndex = (y - 1) * 8 + (x + 1);
+
+            if (!isFriendlyPiece(board[newIndex], pieceColor)) {
+                moves.push({from: position, to: newIndex});
+            }
+        }
+
+        //bottom-left
+        if (x - 1 >= 0 && y + 1 < 8) {
+            
+            const newIndex = (y + 1) * 8 + (x - 1);
+
+            if (!isFriendlyPiece(board[newIndex], pieceColor)) {
+                moves.push({from: position, to: newIndex});
+            }
+        }
+
+        //bottom-right
+        if (x + 1 < 8 && y + 1 < 8) {
+            
+            const newIndex = (y + 1) * 8 + (x + 1);
+
+            if (!isFriendlyPiece(board[newIndex], pieceColor)) {
+                moves.push({from: position, to: newIndex});
+            }
+        }
+
+    }else if(piece == "N" || piece == "n"){//knight
+
+        const y = Math.floor(position / 8); // Row
+        const x = position % 8;              // Column
+        const pieceColor = isUpperCase(piece) ? "w" : "b";
+
+        //all possible knight moves
+        const knightMoves = [
+            [2, 1], [2, -1], [-2, 1], [-2, -1],
+            [1, 2], [1, -2], [-1, 2], [-1, -2] 
+        ];
+
+        for (const [dx, dy] of knightMoves) {
+            
+            const nx = x + dx; 
+            const ny = y + dy; 
+
+            if (isValidPosition(nx, ny)) {
+                const newIndex = ny * 8 + nx;
+
+                if (!isFriendlyPiece(board[newIndex], pieceColor)) {
+                    moves.push({from: position, to: newIndex});
+                }
+            }
+        }
     }
 
     return moves;
+}
+
+function isValidPosition(x, y) {
+    return x >= 0 && x < 8 && y >= 0 && y < 8; // Check if the position is within the board limits
 }
 
 function show_valid_moves_in_html(moves) {
@@ -564,6 +689,8 @@ function hide_shown_valid_moves_in_html() {
 
     valid_squares_shown = [];
 }
+
+addListenerToSquares();
 
 load_img_in_array(pieces_name_to_img_name) 
 
