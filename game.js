@@ -9,6 +9,9 @@ const board = Array(FILE * RANK).fill("");
 //hashmap with pieces name and their images
 let pieces_img = new Map();
 
+//array of valid moves
+let validMoves = [];
+
 let Previous_selected_square = {
     dom : null,
     index: null
@@ -134,7 +137,8 @@ function squareClicked(event) {
         return;
     }
 
-    //unselect if clicked previous selected square
+
+    //unselect if clicked the same square
     if(Previous_selected_square.dom == dom_sq){
         Previous_selected_square.dom.classList.remove("selected");
         Previous_selected_square.dom = null;
@@ -146,27 +150,40 @@ function squareClicked(event) {
 
         //unselect previous selected square
         if (Previous_selected_square.dom != null) {
+
             Previous_selected_square.dom.classList.remove("selected");
             Previous_selected_square.index = null;
-        }
 
-        hide_shown_valid_moves_in_html();
+            //hide previous piece valid moves
+            hide_shown_valid_moves_in_html();
+        }
 
         //select clicked square
         dom_sq.classList.add("selected");
 
-        let moves = generate_moves(board[square_index],square_index);
+        //generate valid moves for selected piece
+        validMoves = generate_moves(board[square_index],square_index);
 
-        console.log(moves);
+        console.log(validMoves);
 
-        show_valid_moves_in_html(moves);
+        //show the valid moves in the board
+        show_valid_moves_in_html(validMoves);
 
         Previous_selected_square.dom = dom_sq;
         Previous_selected_square.index = square_index;
     }else{
-        if (isEnemyPiece(board[square_index], player_color) && Previous_selected_square.index == null) {
-            return;//capture
+        if (isEnemyPiece(board[square_index], player_color) && Previous_selected_square.index != null) {
+            //capture
         }else if(Previous_selected_square.index == null){
+            return;
+        }
+
+        //check if the move is a valid move, if not return
+        if(!validMoves.some(move => move.to == square_index)){
+            /*
+            console.log(validMoves);
+            console.log("hi", validMoves.some(move => move.to == square_index), square_index, validMoves.includes(new Move(Previous_selected_square.index, square_index)), new Move(Previous_selected_square.index, square_index));
+            */
             return;
         }
 
@@ -174,9 +191,11 @@ function squareClicked(event) {
 
         //simulate 2 player game
         if (player_color == "w") {
+            document.getElementById("board").classList.add("flip-table");
             player_color = "b";
             enemy_color = "W";
         }else{
+            document.getElementById("board").classList.remove("flip-table");
             player_color = "w";
             enemy_color = "b";
         }
@@ -258,7 +277,7 @@ function generate_moves(piece, position) {
             moves.push(new Move(position, position - 8));
 
             //pawn move 2 square forward if never moved
-            if (position >= 48 && position <= 55) {
+            if (position >= 48 && position <= 55 && board[position - 16] == "") {
                 moves.push(new Move(position, position - 16));
             }
         }
@@ -291,7 +310,7 @@ function generate_moves(piece, position) {
             moves.push(new Move(position, position + 8 ));
 
             //pawn move 2 square forward if never moved
-            if (position >= 8 && position <= 15) {
+            if (position >= 8 && position <= 15 && board[position + 16] == "") {
                 moves.push(new Move(position, position + 16));
             }
         }
