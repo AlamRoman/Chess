@@ -1,7 +1,9 @@
 
 const FILE = 8;
 const RANK = 8;
-const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+//const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+
+const STARTING_FEN = "8/8/8/2K5/8/3k4/8/8";
 
 //create the empty board
 const board = Array(FILE * RANK).fill("");
@@ -73,7 +75,7 @@ function update_board_view(board) {
 
         let square = document.getElementById("sq"+ i);
 
-        square.innerHTML = "";
+        square.innerHTML = i;
 
         if(board[i] !== ""){
 
@@ -180,15 +182,13 @@ function squareClicked(event) {
 
         //check if the move is a valid move, if not return
         if(!validMoves.some(move => move.to == square_index)){
-            /*
-            console.log(validMoves);
-            console.log("hi", validMoves.some(move => move.to == square_index), square_index, validMoves.includes(new Move(Previous_selected_square.index, square_index)), new Move(Previous_selected_square.index, square_index));
-            */
             return;
         }
 
         makeMove(Previous_selected_square.index, square_index);
 
+        console.log(isKingInCheck("b"));
+        
         //simulate 2 player game
         if (player_color == "w") {
             document.getElementById("board").classList.add("flip-table");
@@ -669,6 +669,96 @@ function generate_moves(piece, position) {
     }
 
     return moves;
+}
+
+function isKingInCheck(kingColor){
+
+    const kingPosition = (kingColor == "w") ? findPiecePosition("K") : findPiecePosition("k");
+    const king_x = kingPosition % 8; //col
+    const king_y = Math.floor(kingPosition / 8); //row
+
+    const opponentPawn = (kingColor == 'w') ? 'p' : 'P';
+    const opponentKnight = (kingColor == 'w') ? 'n' : 'N';
+    const opponentRook = (kingColor == 'w') ? 'r' : 'R';
+    const opponentBishop = (kingColor == 'w') ? 'b' : 'B';
+    const opponentQueen = (kingColor == 'w') ? 'q' : 'Q';
+    const opponentKing = (kingColor == 'w') ? 'k' : 'K';
+
+    // Check for pawn attacks
+    let pawnDirection = (kingColor == 'w') ? -1 : 1; // For white king opponent pawn will be up (-1), and for black king down (1)
+    //if there is an enemy pawn in left
+    if (isValidPosition(king_x - 1, king_y + pawnDirection) && board[row_col_to_position(king_x - 1, (king_y + pawnDirection) * 8)] == opponentPawn) return true;
+    //if there is an enemy pawn in right
+    if (isValidPosition(king_x + 1, king_y + pawnDirection) && board[row_col_to_position(king_x + 1, (king_y + pawnDirection) * 8)] == opponentPawn) return true;
+
+
+    //check for knights attack
+    const knightMoves = [[-2, -1], [-2, 1], [-1, -2], [-1, 2],[1, -2], [1, 2], [2, -1], [2, 1]];
+    
+    for (const [rowOffset, colOffset] of knightMoves) {
+        const row = king_y + rowOffset;
+        const col = king_x + colOffset;
+        if (isValidPosition(col, row) && board[row_col_to_position(row, col)] == opponentKnight) return true;
+    }
+
+    // Check for rook/queen attacks (horizontal/vertical)
+    const rookDirections = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+
+    for (const [rowDir, colDir] of rookDirections) {
+
+        for (let i = 1; i < 8; i++) {
+            const row = king_y + i * rowDir;
+            const col = king_x + i * colDir;
+
+            //check if the position is valid
+            if (!isValidPosition(col, row)){
+                break;
+            }else if (board[row_col_to_position(row, col)] == opponentRook || board[row_col_to_position(row, col)] == opponentQueen){
+                return true;
+            }else if (board[row_col_to_position(row, col)] != "") {//check if blocked by any other piece
+                break;
+            }
+        }
+    }
+
+    // Check for bishop/queen attacks (diagonal)
+    const bishopDirections = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+
+    for (const [rowDir, colDir] of bishopDirections) {
+        for (let i = 1; i < 8; i++) {
+            const row = king_y + i * rowDir;
+            const col = king_x + i * colDir;
+
+            //check if the position is valid
+            if (!isValidPosition(col, row)){
+                break;
+            }else if (board[row_col_to_position(row, col)] == opponentBishop || board[row_col_to_position(row, col)] == opponentQueen){
+                return true;
+            }else if (board[row_col_to_position(row, col)] != "") {//check if blocked by any other piece
+                break;
+            }
+        }
+    }
+
+    // Check for opponent king
+    const enemyKingMoves = [[-1, -1], [-1, 0], [-1, 1], [0, -1],[0, 1], [1, -1], [1, 0], [1, 1]];
+
+    for (const [rowOffset, colOffset] of enemyKingMoves) {
+        const row = king_y + rowOffset;
+        const col = king_x + colOffset;
+
+        if (isValidPosition(col, row) && board[row_col_to_position(row, col)] == opponentKing) return true;
+    }
+
+    return false;
+}
+
+function findPiecePosition(piece){
+    return board.indexOf(piece);
+}
+
+function row_col_to_position(row, col){
+    return col + row * RANK;
 }
 
 function isValidPosition(x, y) {

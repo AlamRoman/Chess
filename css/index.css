@@ -36,6 +36,7 @@ td{
     vertical-align: middle;
     padding: 0;
     position: relative;
+    color: black;
 }
 
 .selected{
@@ -47,6 +48,7 @@ td{
     vertical-align: middle;
     height: auto;
     user-select: none;
+    transition: all 500ms ease-in-out;
 }
 
 .possibleMove > .high-light{
@@ -78,6 +80,11 @@ td{
     */
 }
 
+#board{
+    transition: all 500ms ease-in-out;
+}
+
 .flip-table, .flip-table .piece-img{
+    transition: all 500ms ease-in-out;
     transform:rotate(180deg);
 }
