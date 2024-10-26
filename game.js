@@ -3,7 +3,7 @@ const FILE = 8;
 const RANK = 8;
 //const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 
-const STARTING_FEN = "8/8/8/2K5/8/3k4/8/8";
+const STARTING_FEN = "8/2Q5/8/7r/8/b2k4/8/8";
 
 //create the empty board
 const board = Array(FILE * RANK).fill("");
@@ -187,8 +187,6 @@ function squareClicked(event) {
 
         makeMove(Previous_selected_square.index, square_index);
 
-        console.log(isKingInCheck("b"));
-        
         //simulate 2 player game
         if (player_color == "w") {
             document.getElementById("board").classList.add("flip-table");
@@ -263,14 +261,17 @@ function movePiece(from, to) {
 
 function generate_moves(piece, position) {
 
+    const y = Math.floor(position / 8); // Row
+    const x = position % 8;              // Column
+    const pieceColor = isUpperCase(piece) ? "w" : "b";
+
+    let board_copy = Array.from(board);
+
     let moves = new Array();
 
     position = parseInt(position);
 
     if (piece == "P") {//white pawn
-
-        const y = Math.floor(position / 8); // Row
-        const x = position % 8;              // Column
 
         //pawn move 1 square forward
         if (board[position - 8] == "") {
@@ -302,9 +303,6 @@ function generate_moves(piece, position) {
 
     }else if(piece == "p"){//black pawn
 
-        const y = Math.floor(position / 8); // Row
-        const x = position % 8;              // Column
-
         //pawn move 1 square forward
         if (board[position + 8] == "") {
             moves.push(new Move(position, position + 8 ));
@@ -335,18 +333,34 @@ function generate_moves(piece, position) {
 
     }else if(piece == "R" || piece == "r"){//the rooooooooooooook
 
-        const y = Math.floor(position / 8); // Row
-        const x = position % 8;              // Column
-        const pieceColor = isUpperCase(piece) ? "w" : "b";
-
         // Rook movement logic (up, down, left, right)
         // Move right
         for (let nx = x + 1; nx < 8; nx++) {
             const newIndex = y * 8 + nx;
             if (board[newIndex] == "") {
-                moves.push({from: position, to: newIndex}); // Empty square
+
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex}); // Moving to an empty square
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
+
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
-                moves.push({from: position, to: newIndex});
+
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex});//move to capture
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
+
                 break;
             }else {
                 break; // Blocked by same color piece
@@ -357,9 +371,26 @@ function generate_moves(piece, position) {
         for (let nx = x - 1; nx >= 0; nx--) {
             const newIndex = y * 8 + nx;
             if (board[newIndex] == "") {
-                moves.push({from: position, to: newIndex});  // Empty square
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex}); // Moving to an empty square
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
-                moves.push({from: position, to: newIndex});
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex});//move to capture
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
+
                 break;
             }else {
                 break; // Blocked by same color piece
@@ -370,9 +401,26 @@ function generate_moves(piece, position) {
         for (let ny = y + 1; ny < 8; ny++) {
             const newIndex = ny * 8 + x;
             if (board[newIndex] == "") {
-                moves.push({from: position, to: newIndex});  // Empty square
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex}); // Moving to an empty square
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
-                moves.push({from: position, to: newIndex});
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex});//move to capture
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
+
                 break;
             }else {
                 break; // Blocked by same color piece
@@ -383,9 +431,26 @@ function generate_moves(piece, position) {
         for (let ny = y - 1; ny >= 0; ny--) {
             const newIndex = ny * 8 + x;
             if (board[newIndex] == "") {
-                moves.push({from: position, to: newIndex});  // Empty square
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex}); // Moving to an empty square
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
-                moves.push({from: position, to: newIndex});
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex});//move to capture
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
+
                 break;
             } else {
                 break; // Blocked by same color piece
@@ -393,18 +458,33 @@ function generate_moves(piece, position) {
         }
     }else if(piece == "B" || piece == "b"){//bishop
 
-        const y = Math.floor(position / 8); // Row
-        const x = position % 8;              // Column
-        const pieceColor = isUpperCase(piece) ? "w" : "b";
-
         // Bishop movement logic (up-left, up-right, bottom-left, bottom-right)
         // Move up-left
         for (let ny = y - 1, nx = x-1; ny>= 0 && nx >= 0; ny--,nx--) {
             const newIndex = ny * 8 + nx;
             if (board[newIndex] == "") {
-                moves.push({from: position, to: newIndex}); // Empty square
+
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex}); // Moving to an empty square
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
+
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
-                moves.push({from: position, to: newIndex});
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex});//move to capture
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
+
                 break;
             }else {
                 break; // Blocked by same color piece
@@ -415,9 +495,26 @@ function generate_moves(piece, position) {
         for (let ny = y - 1, nx = x+1; ny>= 0 && nx < 8; ny--,nx++) {
             const newIndex = ny * 8 + nx;
             if (board[newIndex] == "") {
-                moves.push({from: position, to: newIndex}); // Empty square
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex}); // Moving to an empty square
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
-                moves.push({from: position, to: newIndex});
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex});//move to capture
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
+
                 break;
             }else {
                 break; // Blocked by same color piece
@@ -428,9 +525,26 @@ function generate_moves(piece, position) {
         for (let ny = y + 1, nx = x-1; ny < 8 && nx >= 0; ny++,nx--) {
             const newIndex = ny * 8 + nx;
             if (board[newIndex] == "") {
-                moves.push({from: position, to: newIndex}); // Empty square
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex}); // Moving to an empty square
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
-                moves.push({from: position, to: newIndex});
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex});//move to capture
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
+
                 break;
             }else {
                 break; // Blocked by same color piece
@@ -441,9 +555,26 @@ function generate_moves(piece, position) {
         for (let ny = y + 1, nx = x+1; ny < 8 && nx < 8; ny++,nx++) {
             const newIndex = ny * 8 + nx;
             if (board[newIndex] == "") {
-                moves.push({from: position, to: newIndex}); // Empty square
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex}); // Moving to an empty square
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
-                moves.push({from: position, to: newIndex});
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex});//move to capture
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
+
                 break;
             }else {
                 break; // Blocked by same color piece
@@ -452,18 +583,31 @@ function generate_moves(piece, position) {
         
     }else if(piece == "Q" || piece == "q"){//queen
 
-        const y = Math.floor(position / 8); // Row
-        const x = position % 8;              // Column
-        const pieceColor = isUpperCase(piece) ? "w" : "b";
-
         // Rook movement logic (up, down, left, right)
         // Move right
         for (let nx = x + 1; nx < 8; nx++) {
             const newIndex = y * 8 + nx;
             if (board[newIndex] == "") {
-                moves.push({from: position, to: newIndex}); // Empty square
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex}); // Moving to an empty square
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
-                moves.push({from: position, to: newIndex});
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex});//move to capture
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
+
                 break;
             }else {
                 break; // Blocked by same color piece
@@ -474,9 +618,26 @@ function generate_moves(piece, position) {
         for (let nx = x - 1; nx >= 0; nx--) {
             const newIndex = y * 8 + nx;
             if (board[newIndex] == "") {
-                moves.push({from: position, to: newIndex});  // Empty square
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex}); // Moving to an empty square
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
-                moves.push({from: position, to: newIndex});
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex});//move to capture
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
+
                 break;
             }else {
                 break; // Blocked by same color piece
@@ -487,9 +648,26 @@ function generate_moves(piece, position) {
         for (let ny = y + 1; ny < 8; ny++) {
             const newIndex = ny * 8 + x;
             if (board[newIndex] == "") {
-                moves.push({from: position, to: newIndex});  // Empty square
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex}); // Moving to an empty square
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
-                moves.push({from: position, to: newIndex});
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex});//move to capture
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
+
                 break;
             }else {
                 break; // Blocked by same color piece
@@ -500,9 +678,26 @@ function generate_moves(piece, position) {
         for (let ny = y - 1; ny >= 0; ny--) {
             const newIndex = ny * 8 + x;
             if (board[newIndex] == "") {
-                moves.push({from: position, to: newIndex});  // Empty square
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex}); // Moving to an empty square
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
-                moves.push({from: position, to: newIndex});
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex});//move to capture
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
+
                 break;
             } else {
                 break; // Blocked by same color piece
@@ -513,9 +708,26 @@ function generate_moves(piece, position) {
         for (let ny = y - 1, nx = x-1; ny>= 0 && nx >= 0; ny--,nx--) {
             const newIndex = ny * 8 + nx;
             if (board[newIndex] == "") {
-                moves.push({from: position, to: newIndex}); // Empty square
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex}); // Moving to an empty square
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
-                moves.push({from: position, to: newIndex});
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex});//move to capture
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
+
                 break;
             }else {
                 break; // Blocked by same color piece
@@ -526,9 +738,26 @@ function generate_moves(piece, position) {
         for (let ny = y - 1, nx = x+1; ny>= 0 && nx < 8; ny--,nx++) {
             const newIndex = ny * 8 + nx;
             if (board[newIndex] == "") {
-                moves.push({from: position, to: newIndex}); // Empty square
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex}); // Moving to an empty square
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
-                moves.push({from: position, to: newIndex});
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex});//move to capture
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
+
                 break;
             }else {
                 break; // Blocked by same color piece
@@ -539,9 +768,26 @@ function generate_moves(piece, position) {
         for (let ny = y + 1, nx = x-1; ny < 8 && nx >= 0; ny++,nx--) {
             const newIndex = ny * 8 + nx;
             if (board[newIndex] == "") {
-                moves.push({from: position, to: newIndex}); // Empty square
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex}); // Moving to an empty square
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
-                moves.push({from: position, to: newIndex});
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex});//move to capture
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
+
                 break;
             }else {
                 break; // Blocked by same color piece
@@ -552,25 +798,47 @@ function generate_moves(piece, position) {
         for (let ny = y + 1, nx = x+1; ny < 8 && nx < 8; ny++,nx++) {
             const newIndex = ny * 8 + nx;
             if (board[newIndex] == "") {
-                moves.push({from: position, to: newIndex}); // Empty square
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex}); // Moving to an empty square
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
-                moves.push({from: position, to: newIndex});
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex});//move to capture
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
+
                 break;
             }else {
                 break; // Blocked by same color piece
             }
         }
     }else if(piece == "K" || piece == "k"){//king
-        const y = Math.floor(position / 8); // Row
-        const x = position % 8;              // Column
-        const pieceColor = isUpperCase(piece) ? "w" : "b";
 
         //up
         if (y - 1 >= 0) {
             const newIndex = (y-1) * 8 + x;
 
             if (!isFriendlyPiece(board[newIndex], pieceColor)) {
-                moves.push({from: position, to: newIndex});
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex}); // Moving to an empty square
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
             }
         }
         
@@ -579,7 +847,15 @@ function generate_moves(piece, position) {
             const newIndex = (y + 1) * 8 + x;
 
             if (!isFriendlyPiece(board[newIndex], pieceColor)) {
-                moves.push({from: position, to: newIndex});
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex}); // Moving to an empty square
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
             }
         }
         
@@ -588,7 +864,15 @@ function generate_moves(piece, position) {
             const newIndex = y * 8 + (x - 1);
 
             if (!isFriendlyPiece(board[newIndex], pieceColor)) {
-                moves.push({from: position, to: newIndex});
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex}); // Moving to an empty square
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
             }
         }
         
@@ -597,7 +881,15 @@ function generate_moves(piece, position) {
             const newIndex = y * 8 + (x + 1);
 
             if (!isFriendlyPiece(board[newIndex], pieceColor)) {
-                moves.push({from: position, to: newIndex});
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex}); // Moving to an empty square
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
             }
         }
 
@@ -607,7 +899,15 @@ function generate_moves(piece, position) {
             const newIndex = (y - 1) * 8 + (x - 1);
 
             if (!isFriendlyPiece(board[newIndex], pieceColor)) {
-                moves.push({from: position, to: newIndex});
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex}); // Moving to an empty square
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
             }
         }
 
@@ -617,7 +917,15 @@ function generate_moves(piece, position) {
             const newIndex = (y - 1) * 8 + (x + 1);
 
             if (!isFriendlyPiece(board[newIndex], pieceColor)) {
-                moves.push({from: position, to: newIndex});
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex}); // Moving to an empty square
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
             }
         }
 
@@ -627,7 +935,15 @@ function generate_moves(piece, position) {
             const newIndex = (y + 1) * 8 + (x - 1);
 
             if (!isFriendlyPiece(board[newIndex], pieceColor)) {
-                moves.push({from: position, to: newIndex});
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex}); // Moving to an empty square
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
             }
         }
 
@@ -637,15 +953,19 @@ function generate_moves(piece, position) {
             const newIndex = (y + 1) * 8 + (x + 1);
 
             if (!isFriendlyPiece(board[newIndex], pieceColor)) {
-                moves.push({from: position, to: newIndex});
+                //make the move
+                board_copy[newIndex] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy)) {
+                    moves.push({from: position, to: newIndex}); // Moving to an empty square
+                }
+
+                //undo move
+                board_copy[newIndex] = "";
             }
         }
 
     }else if(piece == "N" || piece == "n"){//knight
-
-        const y = Math.floor(position / 8); // Row
-        const x = position % 8;              // Column
-        const pieceColor = isUpperCase(piece) ? "w" : "b";
 
         //all possible knight moves
         const knightMoves = [
@@ -671,9 +991,26 @@ function generate_moves(piece, position) {
     return moves;
 }
 
-function isKingInCheck(kingColor){
+function makeTemporaryMove(piece, position, newIndex, moves){
+    let board_copy = Array.from(board);
+
+    //make the move
+    board_copy[newIndex] = piece;
+    board_copy[position] = "";
+
+    if (!isKingInCheck(pieceColor, board_copy)) {
+        moves.push({from: position, to: newIndex}); // Moving to an empty square
+    }
+}
+
+function isKingInCheck(kingColor, b){
 
     const kingPosition = (kingColor == "w") ? findPiecePosition("K") : findPiecePosition("k");
+
+    if (kingPosition == -1) {//if there is no king return
+        return;
+    }
+
     const king_x = kingPosition % 8; //col
     const king_y = Math.floor(kingPosition / 8); //row
 
@@ -687,9 +1024,9 @@ function isKingInCheck(kingColor){
     // Check for pawn attacks
     let pawnDirection = (kingColor == 'w') ? -1 : 1; // For white king opponent pawn will be up (-1), and for black king down (1)
     //if there is an enemy pawn in left
-    if (isValidPosition(king_x - 1, king_y + pawnDirection) && board[row_col_to_position(king_x - 1, (king_y + pawnDirection) * 8)] == opponentPawn) return true;
+    if (isValidPosition(king_x - 1, king_y + pawnDirection) && b[row_col_to_position(king_y + pawnDirection, king_x - 1)] == opponentPawn) return true;
     //if there is an enemy pawn in right
-    if (isValidPosition(king_x + 1, king_y + pawnDirection) && board[row_col_to_position(king_x + 1, (king_y + pawnDirection) * 8)] == opponentPawn) return true;
+    if (isValidPosition(king_x + 1, king_y + pawnDirection) && b[row_col_to_position(king_y + pawnDirection, king_x + 1)] == opponentPawn) return true;
 
 
     //check for knights attack
@@ -698,7 +1035,7 @@ function isKingInCheck(kingColor){
     for (const [rowOffset, colOffset] of knightMoves) {
         const row = king_y + rowOffset;
         const col = king_x + colOffset;
-        if (isValidPosition(col, row) && board[row_col_to_position(row, col)] == opponentKnight) return true;
+        if (isValidPosition(col, row) && b[row_col_to_position(row, col)] == opponentKnight) return true;
     }
 
     // Check for rook/queen attacks (horizontal/vertical)
@@ -713,9 +1050,9 @@ function isKingInCheck(kingColor){
             //check if the position is valid
             if (!isValidPosition(col, row)){
                 break;
-            }else if (board[row_col_to_position(row, col)] == opponentRook || board[row_col_to_position(row, col)] == opponentQueen){
+            }else if (b[row_col_to_position(row, col)] == opponentRook || b[row_col_to_position(row, col)] == opponentQueen){
                 return true;
-            }else if (board[row_col_to_position(row, col)] != "") {//check if blocked by any other piece
+            }else if (b[row_col_to_position(row, col)] != "") {//check if blocked by any other piece
                 break;
             }
         }
@@ -732,9 +1069,9 @@ function isKingInCheck(kingColor){
             //check if the position is valid
             if (!isValidPosition(col, row)){
                 break;
-            }else if (board[row_col_to_position(row, col)] == opponentBishop || board[row_col_to_position(row, col)] == opponentQueen){
+            }else if (b[row_col_to_position(row, col)] == opponentBishop || b[row_col_to_position(row, col)] == opponentQueen){
                 return true;
-            }else if (board[row_col_to_position(row, col)] != "") {//check if blocked by any other piece
+            }else if (b[row_col_to_position(row, col)] != "") {//check if blocked by any other piece
                 break;
             }
         }
@@ -747,7 +1084,7 @@ function isKingInCheck(kingColor){
         const row = king_y + rowOffset;
         const col = king_x + colOffset;
 
-        if (isValidPosition(col, row) && board[row_col_to_position(row, col)] == opponentKing) return true;
+        if (isValidPosition(col, row) && b[row_col_to_position(row, col)] == opponentKing) return true;
     }
 
     return false;
