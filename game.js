@@ -1,9 +1,9 @@
 
 const FILE = 8;
 const RANK = 8;
-//const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 
-const STARTING_FEN = "8/2Q5/8/7r/8/b2k4/8/8";
+//const STARTING_FEN = "8/2Q5/8/4p2r/8/b2k1n2/8/8";
 
 //create the empty board
 const board = Array(FILE * RANK).fill("");
@@ -75,7 +75,7 @@ function update_board_view(board) {
 
         let square = document.getElementById("sq"+ i);
 
-        square.innerHTML = i;
+        square.innerHTML = "";
 
         if(board[i] !== ""){
 
@@ -275,29 +275,34 @@ function generate_moves(piece, position) {
 
         //pawn move 1 square forward
         if (board[position - 8] == "") {
-            moves.push(new Move(position, position - 8));
+            let newIndex = position - 8;
+
+            makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
             //pawn move 2 square forward if never moved
             if (position >= 48 && position <= 55 && board[position - 16] == "") {
-                moves.push(new Move(position, position - 16));
+                
+                let newIndex = position - 16;
+
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
             }
         }
 
-        if (isValidPosition(x-1, y-1)) {
+        if (isValidPosition(x-1, y-1)) {//capture left
 
             const newIndex = (y-1) * 8 + (x-1);
 
             if (isEnemyPiece(board[newIndex], "w")) {
-                moves.push(new Move(position, newIndex));
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
             }
         }
 
-        if (isValidPosition(x+1, y-1)) {
+        if (isValidPosition(x+1, y-1)) {//capture right
             
             const newIndex = (y-1) * 8 + (x+1);
 
             if (isEnemyPiece(board[newIndex], "w")) {
-                moves.push(new Move(position, newIndex));
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
             }
         }
 
@@ -305,29 +310,35 @@ function generate_moves(piece, position) {
 
         //pawn move 1 square forward
         if (board[position + 8] == "") {
-            moves.push(new Move(position, position + 8 ));
+            
+            let newIndex = position + 8;
+
+            makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
             //pawn move 2 square forward if never moved
             if (position >= 8 && position <= 15 && board[position + 16] == "") {
-                moves.push(new Move(position, position + 16));
+                
+                let newIndex = position + 16;
+
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
             }
         }
 
-        if (isValidPosition(x-1, y+1)) {
+        if (isValidPosition(x-1, y+1)) {//capture left
 
             const newIndex = (y+1) * 8 + (x-1);
 
             if (isEnemyPiece(board[newIndex], "b")) {
-                moves.push(new Move(position, newIndex));
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
             }
         }
 
-        if (isValidPosition(x+1, y+1)) {
+        if (isValidPosition(x+1, y+1)) {//capture right
             
             const newIndex = (y+1) * 8 + (x+1);
 
             if (isEnemyPiece(board[newIndex], "b")) {
-                moves.push(new Move(position, newIndex));
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
             }
         }
 
@@ -713,7 +724,7 @@ function generate_moves(piece, position) {
                 const newIndex = ny * 8 + nx;
 
                 if (!isFriendlyPiece(board[newIndex], pieceColor)) {
-                    moves.push({from: position, to: newIndex});
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
                 }
             }
         }
@@ -730,7 +741,7 @@ function makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves)
     board_copy[position] = "";
 
     if (!isKingInCheck(pieceColor, board_copy)) {
-        moves.push({from: position, to: newIndex}); // Moving to an empty square
+        moves.push(new Move(position, newIndex));//add to legal moves
     }
 }
 
