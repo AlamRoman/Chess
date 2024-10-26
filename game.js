@@ -339,27 +339,11 @@ function generate_moves(piece, position) {
             const newIndex = y * 8 + nx;
             if (board[newIndex] == "") {
 
-                //make the move
-                board_copy[newIndex] = piece;
-
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex}); // Moving to an empty square
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
 
-                //make the move
-                board_copy[newIndex] = piece;
-
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex});//move to capture
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
                 break;
             }else {
@@ -371,25 +355,12 @@ function generate_moves(piece, position) {
         for (let nx = x - 1; nx >= 0; nx--) {
             const newIndex = y * 8 + nx;
             if (board[newIndex] == "") {
-                //make the move
-                board_copy[newIndex] = piece;
 
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex}); // Moving to an empty square
-                }
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
-                //undo move
-                board_copy[newIndex] = "";
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
-                //make the move
-                board_copy[newIndex] = piece;
 
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex});//move to capture
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
                 break;
             }else {
@@ -401,25 +372,12 @@ function generate_moves(piece, position) {
         for (let ny = y + 1; ny < 8; ny++) {
             const newIndex = ny * 8 + x;
             if (board[newIndex] == "") {
-                //make the move
-                board_copy[newIndex] = piece;
+                
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex}); // Moving to an empty square
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
-                //make the move
-                board_copy[newIndex] = piece;
-
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex});//move to capture
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
+                
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
                 break;
             }else {
@@ -431,25 +389,12 @@ function generate_moves(piece, position) {
         for (let ny = y - 1; ny >= 0; ny--) {
             const newIndex = ny * 8 + x;
             if (board[newIndex] == "") {
-                //make the move
-                board_copy[newIndex] = piece;
+                
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex}); // Moving to an empty square
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
-                //make the move
-                board_copy[newIndex] = piece;
-
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex});//move to capture
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
+                
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
                 break;
             } else {
@@ -464,26 +409,11 @@ function generate_moves(piece, position) {
             const newIndex = ny * 8 + nx;
             if (board[newIndex] == "") {
 
-                //make the move
-                board_copy[newIndex] = piece;
-
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex}); // Moving to an empty square
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
-                //make the move
-                board_copy[newIndex] = piece;
-
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex});//move to capture
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
+                
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
                 break;
             }else {
@@ -495,25 +425,12 @@ function generate_moves(piece, position) {
         for (let ny = y - 1, nx = x+1; ny>= 0 && nx < 8; ny--,nx++) {
             const newIndex = ny * 8 + nx;
             if (board[newIndex] == "") {
-                //make the move
-                board_copy[newIndex] = piece;
+                
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex}); // Moving to an empty square
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
-                //make the move
-                board_copy[newIndex] = piece;
-
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex});//move to capture
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
+                
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
                 break;
             }else {
@@ -525,25 +442,12 @@ function generate_moves(piece, position) {
         for (let ny = y + 1, nx = x-1; ny < 8 && nx >= 0; ny++,nx--) {
             const newIndex = ny * 8 + nx;
             if (board[newIndex] == "") {
-                //make the move
-                board_copy[newIndex] = piece;
+                
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex}); // Moving to an empty square
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
-                //make the move
-                board_copy[newIndex] = piece;
-
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex});//move to capture
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
+                
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
                 break;
             }else {
@@ -555,25 +459,12 @@ function generate_moves(piece, position) {
         for (let ny = y + 1, nx = x+1; ny < 8 && nx < 8; ny++,nx++) {
             const newIndex = ny * 8 + nx;
             if (board[newIndex] == "") {
-                //make the move
-                board_copy[newIndex] = piece;
+                
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex}); // Moving to an empty square
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
-                //make the move
-                board_copy[newIndex] = piece;
-
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex});//move to capture
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
+                
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
                 break;
             }else {
@@ -588,25 +479,12 @@ function generate_moves(piece, position) {
         for (let nx = x + 1; nx < 8; nx++) {
             const newIndex = y * 8 + nx;
             if (board[newIndex] == "") {
-                //make the move
-                board_copy[newIndex] = piece;
+                
+                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves);
 
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex}); // Moving to an empty square
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
-                //make the move
-                board_copy[newIndex] = piece;
-
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex});//move to capture
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
+                
+                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves);
 
                 break;
             }else {
@@ -618,25 +496,12 @@ function generate_moves(piece, position) {
         for (let nx = x - 1; nx >= 0; nx--) {
             const newIndex = y * 8 + nx;
             if (board[newIndex] == "") {
-                //make the move
-                board_copy[newIndex] = piece;
+                
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex}); // Moving to an empty square
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
-                //make the move
-                board_copy[newIndex] = piece;
-
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex});//move to capture
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
+                
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
                 break;
             }else {
@@ -648,25 +513,12 @@ function generate_moves(piece, position) {
         for (let ny = y + 1; ny < 8; ny++) {
             const newIndex = ny * 8 + x;
             if (board[newIndex] == "") {
-                //make the move
-                board_copy[newIndex] = piece;
+                
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex}); // Moving to an empty square
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
-                //make the move
-                board_copy[newIndex] = piece;
-
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex});//move to capture
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
+                
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
                 break;
             }else {
@@ -678,25 +530,12 @@ function generate_moves(piece, position) {
         for (let ny = y - 1; ny >= 0; ny--) {
             const newIndex = ny * 8 + x;
             if (board[newIndex] == "") {
-                //make the move
-                board_copy[newIndex] = piece;
+                
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex}); // Moving to an empty square
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
-                //make the move
-                board_copy[newIndex] = piece;
-
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex});//move to capture
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
+                
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
                 break;
             } else {
@@ -708,25 +547,12 @@ function generate_moves(piece, position) {
         for (let ny = y - 1, nx = x-1; ny>= 0 && nx >= 0; ny--,nx--) {
             const newIndex = ny * 8 + nx;
             if (board[newIndex] == "") {
-                //make the move
-                board_copy[newIndex] = piece;
+                
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex}); // Moving to an empty square
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
-                //make the move
-                board_copy[newIndex] = piece;
-
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex});//move to capture
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
+                
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
                 break;
             }else {
@@ -738,25 +564,12 @@ function generate_moves(piece, position) {
         for (let ny = y - 1, nx = x+1; ny>= 0 && nx < 8; ny--,nx++) {
             const newIndex = ny * 8 + nx;
             if (board[newIndex] == "") {
-                //make the move
-                board_copy[newIndex] = piece;
+                
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex}); // Moving to an empty square
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
-                //make the move
-                board_copy[newIndex] = piece;
-
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex});//move to capture
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
+                
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
                 break;
             }else {
@@ -768,25 +581,12 @@ function generate_moves(piece, position) {
         for (let ny = y + 1, nx = x-1; ny < 8 && nx >= 0; ny++,nx--) {
             const newIndex = ny * 8 + nx;
             if (board[newIndex] == "") {
-                //make the move
-                board_copy[newIndex] = piece;
+                
+                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves);
 
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex}); // Moving to an empty square
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
-                //make the move
-                board_copy[newIndex] = piece;
-
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex});//move to capture
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
+                
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
                 break;
             }else {
@@ -798,25 +598,12 @@ function generate_moves(piece, position) {
         for (let ny = y + 1, nx = x+1; ny < 8 && nx < 8; ny++,nx++) {
             const newIndex = ny * 8 + nx;
             if (board[newIndex] == "") {
-                //make the move
-                board_copy[newIndex] = piece;
+                
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex}); // Moving to an empty square
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
-                //make the move
-                board_copy[newIndex] = piece;
-
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex});//move to capture
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
+                
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
                 break;
             }else {
@@ -830,15 +617,8 @@ function generate_moves(piece, position) {
             const newIndex = (y-1) * 8 + x;
 
             if (!isFriendlyPiece(board[newIndex], pieceColor)) {
-                //make the move
-                board_copy[newIndex] = piece;
-
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex}); // Moving to an empty square
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
+                
+                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves);
             }
         }
         
@@ -847,15 +627,8 @@ function generate_moves(piece, position) {
             const newIndex = (y + 1) * 8 + x;
 
             if (!isFriendlyPiece(board[newIndex], pieceColor)) {
-                //make the move
-                board_copy[newIndex] = piece;
-
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex}); // Moving to an empty square
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
+                
+                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves);
             }
         }
         
@@ -864,15 +637,8 @@ function generate_moves(piece, position) {
             const newIndex = y * 8 + (x - 1);
 
             if (!isFriendlyPiece(board[newIndex], pieceColor)) {
-                //make the move
-                board_copy[newIndex] = piece;
-
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex}); // Moving to an empty square
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
+                
+                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves);
             }
         }
         
@@ -881,15 +647,8 @@ function generate_moves(piece, position) {
             const newIndex = y * 8 + (x + 1);
 
             if (!isFriendlyPiece(board[newIndex], pieceColor)) {
-                //make the move
-                board_copy[newIndex] = piece;
-
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex}); // Moving to an empty square
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
+                
+                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves);
             }
         }
 
@@ -899,15 +658,8 @@ function generate_moves(piece, position) {
             const newIndex = (y - 1) * 8 + (x - 1);
 
             if (!isFriendlyPiece(board[newIndex], pieceColor)) {
-                //make the move
-                board_copy[newIndex] = piece;
-
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex}); // Moving to an empty square
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
+                
+                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves);
             }
         }
 
@@ -917,15 +669,8 @@ function generate_moves(piece, position) {
             const newIndex = (y - 1) * 8 + (x + 1);
 
             if (!isFriendlyPiece(board[newIndex], pieceColor)) {
-                //make the move
-                board_copy[newIndex] = piece;
-
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex}); // Moving to an empty square
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
+                
+                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves);
             }
         }
 
@@ -935,15 +680,8 @@ function generate_moves(piece, position) {
             const newIndex = (y + 1) * 8 + (x - 1);
 
             if (!isFriendlyPiece(board[newIndex], pieceColor)) {
-                //make the move
-                board_copy[newIndex] = piece;
-
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex}); // Moving to an empty square
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
+                
+                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves);
             }
         }
 
@@ -953,15 +691,8 @@ function generate_moves(piece, position) {
             const newIndex = (y + 1) * 8 + (x + 1);
 
             if (!isFriendlyPiece(board[newIndex], pieceColor)) {
-                //make the move
-                board_copy[newIndex] = piece;
-
-                if (!isKingInCheck(pieceColor, board_copy)) {
-                    moves.push({from: position, to: newIndex}); // Moving to an empty square
-                }
-
-                //undo move
-                board_copy[newIndex] = "";
+                
+                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves);
             }
         }
 
@@ -991,7 +722,7 @@ function generate_moves(piece, position) {
     return moves;
 }
 
-function makeTemporaryMove(piece, position, newIndex, moves){
+function makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves){
     let board_copy = Array.from(board);
 
     //make the move
@@ -1005,7 +736,7 @@ function makeTemporaryMove(piece, position, newIndex, moves){
 
 function isKingInCheck(kingColor, b){
 
-    const kingPosition = (kingColor == "w") ? findPiecePosition("K") : findPiecePosition("k");
+    const kingPosition = (kingColor == "w") ? findPiecePosition("K", b) : findPiecePosition("k", b);
 
     if (kingPosition == -1) {//if there is no king return
         return;
@@ -1090,7 +821,7 @@ function isKingInCheck(kingColor, b){
     return false;
 }
 
-function findPiecePosition(piece){
+function findPiecePosition(piece, board){
     return board.indexOf(piece);
 }
 
