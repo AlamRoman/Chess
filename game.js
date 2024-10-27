@@ -1,9 +1,14 @@
 
 const FILE = 8;
 const RANK = 8;
-const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+const WHITE = "w";
+const BLACK = "b";
+//const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 
-//const STARTING_FEN = "8/2Q5/8/4p2r/8/b2k1n2/8/8";
+const STARTING_FEN = "7k/2R5/Q7/8/8/8/8/8";
+
+let player_color = "w";
+let enemy_color = "b";
 
 //create the empty board
 const board = Array(FILE * RANK).fill("");
@@ -13,6 +18,8 @@ let pieces_img = new Map();
 
 //array of valid moves
 let validMoves = [];
+
+let valid_squares_shown = [];
 
 let Previous_selected_square = {
     dom : null,
@@ -26,10 +33,14 @@ class Move {
     }
 }
 
-let player_color = "w";
-let enemy_color = "b";
+const GAME_STATES = Object.freeze({
+    PLAYING: 0,
+    WHITE_WON: 1,
+    BLACK_WON: 2,
+    DRAW_BY_STALEMATE: 3
+});
 
-let valid_squares_shown = [];
+let current_game_state = GAME_STATES.PLAYING;
 
 function addListenerToSquares() {
     const DOM_squares = Array.from(document.getElementsByClassName("square"));
@@ -125,6 +136,10 @@ function isUpperCase(char) {
 
 function squareClicked(event) {
 
+    if (current_game_state != GAME_STATES.PLAYING) {
+        return;
+    }
+
     if (event.target.classList.contains("piece-img") || event.target.classList.contains("high-light")) {
         dom_sq = event.target.parentNode;
     }else{
@@ -177,11 +192,6 @@ function squareClicked(event) {
         if (isEnemyPiece(board[square_index], player_color) && Previous_selected_square.index != null) {
             //capture
         }else if(Previous_selected_square.index == null){
-            return;
-        }
-
-        //check if the move is a valid move, if not return
-        if(!validMoves.some(move => move.to == square_index)){
             return;
         }
 
@@ -239,13 +249,98 @@ function isEnemyPiece(piece, your_color) {
 }
 
 function makeMove(from, to) {
-    //TODO: control if the move is valid
+    
+    //check if the move is a valid move, if not return
+    if(!validMoves.some(move => move.to == to)){
+        return;
+    }
 
     movePiece(from, to);
 
+    isEndGame();
+
+    /*
     computerMove();
 
+    isEndGame();
+    */
+
     update_board_view(board);
+
+    if (current_game_state != GAME_STATES.PLAYING) {
+        setTimeout(function(){
+            showEndGameScreen();
+        }, 500);
+    }
+}
+
+function showEndGameScreen(){
+
+    if (current_game_state == GAME_STATES.WHITE_WON) {
+        alert("White won");
+    }else if(current_game_state == GAME_STATES.BLACK_WON){
+        alert("Black won");
+    }else if(current_game_state == GAME_STATES.DRAW_BY_STALEMATE){
+        alert("Draw by stalemate");
+    }
+}
+
+function isEndGame() {
+
+    let white_total_valid_moves = countTotalValidMovesFor(WHITE);
+    let black_total_valid_moves = countTotalValidMovesFor(BLACK);
+
+    if (isKingInCheck(WHITE, board)) {
+        if (white_total_valid_moves == 0) {
+
+            current_game_state = GAME_STATES.BLACK_WON;
+            return;
+        }
+    }else{
+        if (white_total_valid_moves == 0) {
+
+            current_game_state = GAME_STATES.DRAW_BY_STALEMATE;
+            return;
+        }
+    }
+    
+    if (isKingInCheck(BLACK, board)) {
+        if (black_total_valid_moves == 0) {
+            
+            current_game_state = GAME_STATES.WHITE_WON;
+            return;
+        }
+    }else{
+        if (black_total_valid_moves == 0) {
+
+            current_game_state = GAME_STATES.DRAW_BY_STALEMATE;
+            return;
+        }
+    }
+}
+
+function countTotalValidMovesFor(color){
+    let totalMoves = 0;
+
+    for (let i = 0; i < board.length; i++) {
+        
+        if (color == WHITE) {
+            if (board[i] != "" && isUpperCase(board[i])) {
+
+                let moves = generate_moves(board[i], i);
+                
+                totalMoves += moves.length;
+            }
+        }else{
+            if (board[i] != "" && !isUpperCase(board[i])) {
+                let moves = generate_moves(board[i], i);
+                
+                totalMoves += moves.length;
+            }
+        }
+    }
+
+    return totalMoves;
 }
 
 function computerMove() {
