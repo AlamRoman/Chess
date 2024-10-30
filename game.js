@@ -306,9 +306,9 @@ function makeMove(from, to) {
 function showEndGameScreen(){
 
     if (current_game_state == GAME_STATES.WHITE_WON) {
-        alert("White won");
+        alert("White won by checkmate");
     }else if(current_game_state == GAME_STATES.BLACK_WON){
-        alert("Black won");
+        alert("Black won by checkmate");
     }else if(current_game_state == GAME_STATES.DRAW_BY_STALEMATE){
         alert("Draw by stalemate");
     }
@@ -452,18 +452,41 @@ function generate_moves(piece, position) {
                 if (enemy_pawn_x == x-1) {
 
                     let newIndex =  (y-1) * 8 + (x-1);
+
+                    /*
                     let moveAdded = makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
                     if (moveAdded) {
                         moves[moves.length - 1].SetEnPassant_piece_position(previous_move.to);
                     }
+                        
+                    */
+
+                    //make move and check
+                    let board_copy = Array.from(board);
+
+                    //make the move
+                    board_copy[newIndex] = piece;
+                    board_copy[position] = "";
+                    board_copy[previous_move.to] = "";
+
+                    if (!isKingInCheck(pieceColor, board_copy)) {
+                        moves.push(new Move(position, newIndex, previous_move.to));//add to legal moves
+                    }
 
                 }else if(enemy_pawn_x == x+1){
                     let newIndex =  (y-1) * 8 + (x+1);
-                    let moveAdded = makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
-                    if (moveAdded) {
-                        moves[moves.length - 1].SetEnPassant_piece_position(previous_move.to);
+                    //make move and check
+                    let board_copy = Array.from(board);
+
+                    //make the move
+                    board_copy[newIndex] = piece;
+                    board_copy[position] = "";
+                    board_copy[previous_move.to] = "";
+
+                    if (!isKingInCheck(pieceColor, board_copy)) {
+                        moves.push(new Move(position, newIndex, previous_move.to));//add to legal moves
                     }
                 }
             }
@@ -516,18 +539,32 @@ function generate_moves(piece, position) {
                 if (enemy_pawn_x == x-1) {
 
                     let newIndex =  (y+1) * 8 + (x-1);
-                    let moveAdded = makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
 
-                    if (moveAdded) {
-                        moves[moves.length - 1].SetEnPassant_piece_position(previous_move.to);
+                    //make move and check
+                    let board_copy = Array.from(board);
+
+                    //make the move
+                    board_copy[newIndex] = piece;
+                    board_copy[position] = "";
+                    board_copy[previous_move.to] = "";
+
+                    if (!isKingInCheck(pieceColor, board_copy)) {
+                        moves.push(new Move(position, newIndex, previous_move.to));//add to legal moves
                     }
 
                 }else if(enemy_pawn_x == x+1){
                     let newIndex =  (y+1) * 8 + (x+1);
-                    let moveAdded = makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                    
+                    //make move and check
+                    let board_copy = Array.from(board);
 
-                    if (moveAdded) {
-                        moves[moves.length - 1].SetEnPassant_piece_position(previous_move.to);
+                    //make the move
+                    board_copy[newIndex] = piece;
+                    board_copy[position] = "";
+                    board_copy[previous_move.to] = "";
+
+                    if (!isKingInCheck(pieceColor, board_copy)) {
+                        moves.push(new Move(position, newIndex, previous_move.to));//add to legal moves
                     }
                 }
             }
