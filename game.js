@@ -212,6 +212,11 @@ function squareClicked(event) {
             return;
         }
 
+        //check if the move is a valid move, if not return
+        if(!validMoves.some(move => move.to == square_index)){
+            return;
+        }
+
         makeMove(Previous_selected_square.index, square_index);
 
         //simulate 2 player game
