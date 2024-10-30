@@ -3,9 +3,14 @@ const FILE = 8;
 const RANK = 8;
 const WHITE = "w";
 const BLACK = "b";
-//const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 
-const STARTING_FEN = "7k/2R5/Q7/8/8/8/8/8";
+const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+
+//king check test
+//const STARTING_FEN = "7k/2R5/Q7/8/8/8/8/8";
+
+//enpassant test
+//const STARTING_FEN = "8/2p5/8/8/3P4/8/8/8";
 
 let player_color = "w";
 let enemy_color = "b";
@@ -26,10 +31,22 @@ let Previous_selected_square = {
     index: null
 }
 
+let previous_move = null;
+
 class Move {
-    constructor(from, to){
+    constructor(from, to, enPassant_piece_position=null){
         this.from = from;
         this.to = to;
+
+        this.enPassant_piece_position = enPassant_piece_position;
+    }
+
+    getEnPassant_piece_position(){
+        return this.enPassant_piece_position;
+    }
+
+    SetEnPassant_piece_position(position){
+        this.enPassant_piece_position = position;
     }
 }
 
@@ -249,13 +266,23 @@ function isEnemyPiece(piece, your_color) {
 }
 
 function makeMove(from, to) {
+
+    let move = validMoves.find(move => move.from == from && move.to == to);
     
     //check if the move is a valid move, if not return
+    /*
     if(!validMoves.some(move => move.to == to)){
         return;
     }
+    */
 
-    movePiece(from, to);
+    if (typeof move == "undefined") {
+        return;
+    }
+
+    movePiece(move);
+
+    previous_move = new Move(from, to);
 
     isEndGame();
 
@@ -263,6 +290,8 @@ function makeMove(from, to) {
     computerMove();
 
     isEndGame();
+
+    //previous move
     */
 
     update_board_view(board);
@@ -286,6 +315,8 @@ function showEndGameScreen(){
 }
 
 function isEndGame() {
+
+    //TODO: other endgames
 
     let white_total_valid_moves = countTotalValidMovesFor(WHITE);
     let black_total_valid_moves = countTotalValidMovesFor(BLACK);
@@ -348,10 +379,19 @@ function computerMove() {
     
 }
 
-function movePiece(from, to) {
+function movePiece(move) {
+    let from = move.from;
+    let to = move.to;
+
     let piece_to_move = board[from];
     board[from] = "";
     board[to] = piece_to_move;
+
+    if (move.getEnPassant_piece_position() != null) {
+
+        board[move.getEnPassant_piece_position()] = "";
+        move.SetEnPassant_piece_position(null);
+    }
 }
 
 function generate_moves(piece, position) {
@@ -401,6 +441,34 @@ function generate_moves(piece, position) {
             }
         }
 
+        //enPassant
+        if (y == 3 && previous_move != null && board[previous_move.to] == "p") {
+            
+            let enemy_pawn_x = previous_move.to % 8;
+            let enemy_pawn_from_y =  Math.floor(previous_move.from / 8);
+            let enemy_pawn_to_y =  Math.floor(previous_move.to / 8);
+
+            if(enemy_pawn_from_y == 1 && enemy_pawn_to_y == 3){
+                if (enemy_pawn_x == x-1) {
+
+                    let newIndex =  (y-1) * 8 + (x-1);
+                    let moveAdded = makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+
+                    if (moveAdded) {
+                        moves[moves.length - 1].SetEnPassant_piece_position(previous_move.to);
+                    }
+
+                }else if(enemy_pawn_x == x+1){
+                    let newIndex =  (y-1) * 8 + (x+1);
+                    let moveAdded = makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+
+                    if (moveAdded) {
+                        moves[moves.length - 1].SetEnPassant_piece_position(previous_move.to);
+                    }
+                }
+            }
+        }
+
     }else if(piece == "p"){//black pawn
 
         //pawn move 1 square forward
@@ -434,6 +502,34 @@ function generate_moves(piece, position) {
 
             if (isEnemyPiece(board[newIndex], "b")) {
                 makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+            }
+        }
+
+        //enPassant
+        if(y == 4 && previous_move != null && board[previous_move.to] == "P"){
+
+            let enemy_pawn_x = previous_move.to % 8;
+            let enemy_pawn_from_y =  Math.floor(previous_move.from / 8);
+            let enemy_pawn_to_y =  Math.floor(previous_move.to / 8);
+
+            if (enemy_pawn_from_y == 6 && enemy_pawn_to_y == 4) {
+                if (enemy_pawn_x == x-1) {
+
+                    let newIndex =  (y+1) * 8 + (x-1);
+                    let moveAdded = makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+
+                    if (moveAdded) {
+                        moves[moves.length - 1].SetEnPassant_piece_position(previous_move.to);
+                    }
+
+                }else if(enemy_pawn_x == x+1){
+                    let newIndex =  (y+1) * 8 + (x+1);
+                    let moveAdded = makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+
+                    if (moveAdded) {
+                        moves[moves.length - 1].SetEnPassant_piece_position(previous_move.to);
+                    }
+                }
             }
         }
 
@@ -837,7 +933,11 @@ function makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves)
 
     if (!isKingInCheck(pieceColor, board_copy)) {
         moves.push(new Move(position, newIndex));//add to legal moves
+
+        return true;
     }
+
+    return false;
 }
 
 function isKingInCheck(kingColor, b){
