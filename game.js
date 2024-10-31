@@ -12,11 +12,21 @@ const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 //enpassant test
 //const STARTING_FEN = "8/2p5/8/8/3P4/8/8/8";
 
+//castling test
+//const STARTING_FEN = "r3k2r/8/1N6/pppppppp/PPPPPPPP/8/8/R3K2R";
+
 let player_color = "w";
 let enemy_color = "b";
 
 //create the empty board
 const board = Array(FILE * RANK).fill("");
+
+let castling_rights = {
+    white_queen_side: true,
+    white_king_side: true,
+    black_queen_side: true,
+    black_king_side: true,
+}
 
 //hashmap with pieces name and their images
 let pieces_img = new Map();
@@ -34,11 +44,12 @@ let Previous_selected_square = {
 let previous_move = null;
 
 class Move {
-    constructor(from, to, enPassant_piece_position=null){
+    constructor(from, to, enPassant_piece_position=null, castlingRookToMove=null){
         this.from = from;
         this.to = to;
 
         this.enPassant_piece_position = enPassant_piece_position;
+        this.castlingRookToMove = castlingRookToMove;
     }
 
     getEnPassant_piece_position(){
@@ -392,10 +403,55 @@ function movePiece(move) {
     board[from] = "";
     board[to] = piece_to_move;
 
+    //check and update castling right
+    check_and_update_castling_rights(piece_to_move, from);
+
     if (move.getEnPassant_piece_position() != null) {
 
         board[move.getEnPassant_piece_position()] = "";
         move.SetEnPassant_piece_position(null);
+    }
+
+    console.log(move.castlingRookToMove);
+
+    if (move.castlingRookToMove != null) {
+        board[move.castlingRookToMove.to] = board[move.castlingRookToMove.from];
+        board[move.castlingRookToMove.from] = "";
+    }
+
+    console.log(board);
+}
+
+function check_and_update_castling_rights(piece_to_move, from){
+
+    if(piece_to_move == "K" && castling_rights.white_king_side && castling_rights.white_queen_side){//white king moved
+
+        castling_rights.white_king_side = false;
+        castling_rights.white_queen_side = false;
+
+    }else if(piece_to_move == "k" && castling_rights.black_king_side && castling_rights.black_queen_side ){//black king moved
+
+        castling_rights.black_king_side = false;
+        castling_rights.black_queen_side = false;
+        
+    }
+    
+    if (castling_rights.white_queen_side && board[56] != "R") {//white queen side rook moved
+
+        castling_rights.white_queen_side = false;
+
+    }else if(castling_rights.white_king_side && board[63] != "R"){//white king side rook moved
+
+        castling_rights.white_king_side = false;
+    }
+    
+    if (castling_rights.black_queen_side && board[0] != "r") {//black queen side rook moved
+
+        castling_rights.black_queen_side = false;
+
+    }else if(castling_rights.black_king_side && board[7] != "r"){//black king side rook moved
+
+        castling_rights.black_king_side = false;
     }
 }
 
@@ -938,6 +994,66 @@ function generate_moves(piece, position) {
                 
                 makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves);
             }
+        }
+
+        //castling
+
+        let your_back_rank = (pieceColor == WHITE) ? 7 : 0;
+        let your_king_side_castiling_right = (pieceColor == WHITE) ? castling_rights.white_king_side : castling_rights.black_king_side;
+        let your_queen_side_castling_right = (pieceColor == WHITE) ? castling_rights.white_queen_side : castling_rights.black_queen_side;
+
+        if (y == your_back_rank && (your_king_side_castiling_right || your_queen_side_castling_right) && !isKingInCheck(pieceColor, board)) {
+
+            //king side
+            //check if king side knight and bishop positions are empty
+            if (your_king_side_castiling_right && board[row_col_to_position(y, x+1)] == "" && board[row_col_to_position(y, x+2)] == "") {
+
+                //to check if the bishop position is attacked
+                let board_copy_check_bishop_square = Array.from(board);
+                board_copy_check_bishop_square[row_col_to_position(y, x)] = "";
+                board_copy_check_bishop_square[row_col_to_position(y, x+1)] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy_check_bishop_square)) {
+                    
+                    //to check if kings final position is safe
+                    let board_copy_check_final_position = Array.from(board);
+                    board_copy_check_final_position[row_col_to_position(y, x+1)] = (pieceColor == WHITE) ? "R" : "r";
+                    board_copy_check_final_position[row_col_to_position(y, x+2)] = piece;
+                    board_copy_check_final_position[row_col_to_position(y, x+3)] = "";
+                    board_copy_check_final_position[row_col_to_position(y, x)] = "";
+
+                    if (!isKingInCheck(pieceColor, board_copy_check_final_position)) {
+                        
+                        moves.push(new Move(position, row_col_to_position(y, x+2),null,new Move(row_col_to_position(y, x+3), row_col_to_position(y, x+1))));
+                    }
+                }
+            }
+
+            //queen side
+            //check if queen side knight and bishop positions are empty
+            if (your_queen_side_castling_right && board[row_col_to_position(y, x-1)] == "" && board[row_col_to_position(y, x-2)] == "" && board[row_col_to_position(y, x-3)] == "") {
+                
+                //to check if the bishop position is attacked
+                let board_copy_check_queen_square = Array.from(board);
+                board_copy_check_queen_square[row_col_to_position(y, x)] = "";
+                board_copy_check_queen_square[row_col_to_position(y, x-1)] = piece;
+
+                if (!isKingInCheck(pieceColor, board_copy_check_queen_square)) {
+                    
+                    //to check if kings final position is safe
+                    let board_copy_check_final_position = Array.from(board);
+                    board_copy_check_final_position[row_col_to_position(y, x-1)] = (pieceColor == WHITE) ? "R" : "r";
+                    board_copy_check_final_position[row_col_to_position(y, x-2)] = piece;
+                    board_copy_check_final_position[row_col_to_position(y, x-4)] = "";
+                    board_copy_check_final_position[row_col_to_position(y, x)] = "";
+
+                    if (!isKingInCheck(pieceColor, board_copy_check_final_position)) {
+                        
+                        moves.push(new Move(position, row_col_to_position(y, x-2),null,new Move(row_col_to_position(y, x-4), row_col_to_position(y, x-1))));
+                    }
+                }
+            }
+
         }
 
     }else if(piece == "N" || piece == "n"){//knight
