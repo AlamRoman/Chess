@@ -27,11 +27,11 @@ table, td{
     margin: 0px;
 }
 
-table{
+#board{
     border: 10px solid #654321;
 }
 
-td{
+#board td{
     text-align: center;
     vertical-align: middle;
     padding: 0;
@@ -63,7 +63,7 @@ td{
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    z-index: 1000;
+    z-index: 1;
     
     /*
     display: inline-block;
@@ -87,4 +87,30 @@ td{
 .flip-table, .flip-table .piece-img{
     transition: all 500ms ease-in-out;
     transform:rotate(180deg);
+}
+
+.promotion_menu{
+    table-layout: fixed;
+    width: 280px;
+    display: inline-block;
+    align-items: center;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+}
+
+.promotion_menu, .promotion_menu td{
+    border: 2px solid black;
+    background-color: #ffce9e;
+}
+
+.promotion_menu td{
+    width: 70px;
+    height: 70px;
+}
+
+.promotion_menu td:hover{
+    background-color: #ffe6ce;
 }
