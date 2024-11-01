@@ -313,6 +313,7 @@ function squareClicked(event) {
 
 function swap_player_and_flip_table() {
 
+    /*
     if (player_color == WHITE) {
         document.getElementById("board").classList.add("flip-table");
         player_color = BLACK;
@@ -322,6 +323,7 @@ function swap_player_and_flip_table() {
         player_color = WHITE;
         enemy_color = BLACK;
     }
+        */
 }
 
 function show_pawn_promotion_menu_at(square_index, piece_color){
@@ -401,13 +403,24 @@ function makeMove(move) {
 
     isEndGame();
 
-    /*
-    computerMove();
+    //computer move
+    if (current_game_state != GAME_STATES.PLAYING) {
+        update_board_view(board);
+
+        setTimeout(function(){
+            showEndGameScreen();
+        }, 500);
+    }
+
+    let cMove = computerMove();
+
+    movePiece(cMove);
 
     isEndGame();
 
-    //previous move
-    */
+    previous_move = new Move(cMove.from, cMove.to)
+
+    //computer move
 
     update_board_view(board);
 
@@ -491,7 +504,17 @@ function countTotalValidMovesFor(color){
 
 function computerMove() {
     //TODO: make intelligent computer move, first try implementi random move with legal moves
-    
+    let moves = Array();
+
+    for (let i = 0; i < board.length; i++) {
+        if (isFriendlyPiece(board[i],enemy_color)) {
+            let temp = generate_moves(board[i], i);
+
+            moves = [...moves, ...temp];
+        }
+    }
+
+    return moves[Math.floor(Math.random() * moves.length)];
 }
 
 function movePiece(move) {
