@@ -19,13 +19,16 @@ const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 //pawn promotion test
 //const STARTING_FEN = "1n1b4/2P5/8/8/8/8/3p4/2N1B3";
 
+//perft test
+//const STARTING_FEN = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R";
+
 let player_color = "w";
 let enemy_color = "b";
 
 let turn_of = WHITE;
 
 //create the empty board
-const board = Array(FILE * RANK).fill("");
+let board = Array(FILE * RANK).fill("");
 
 let castling_rights = {
     white_queen_side: true,
@@ -177,6 +180,10 @@ function isUpperCase(char) {
         return false;
     }
     return char === char.toUpperCase() && char.length === 1; // Check if the character is the same when converted to uppercase and is a single character
+}
+
+function getPieceColor(piece) {
+    return (isUpperCase(piece)) ? WHITE : BLACK;
 }
 
 function squareClicked(event) {
@@ -403,15 +410,18 @@ function makeMove(move) {
 
     isEndGame();
 
-    //computer move
+    update_board_view(board);
+
     if (current_game_state != GAME_STATES.PLAYING) {
-        update_board_view(board);
 
         setTimeout(function(){
             showEndGameScreen();
         }, 500);
+
+        return;
     }
 
+    //computer move
     let cMove = computerMove();
 
     movePiece(cMove);
@@ -503,7 +513,7 @@ function countTotalValidMovesFor(color){
 }
 
 function computerMove() {
-    //TODO: make intelligent computer move, first try implementi random move with legal moves
+    //TODO: make intelligent computer move
     let moves = Array();
 
     for (let i = 0; i < board.length; i++) {
@@ -553,6 +563,7 @@ function movePiece(move) {
     }else{
         turn_of = WHITE;
     }
+        
 }
 
 function check_and_update_castling_rights(piece_to_move, from){
@@ -1411,6 +1422,43 @@ function hide_shown_valid_moves_in_html() {
     valid_squares_shown = [];
 }
 
+function perft(depth, turn_color) {
+
+    if (depth == 0) {
+        return 1;
+    }
+
+    let moves = Array();
+
+    let nodes = 0;
+
+    for (let i = 0; i < board.length; i++) {
+        if (board[i] != "" && getPieceColor(board[i]) == turn_color) {
+            let temp = generate_moves(board[i], i);
+
+            moves = [...moves, ...temp];
+        }
+    }
+
+    if (turn_color==WHITE) {
+        turn_color=BLACK;
+    }else{
+        turn_color=WHITE;
+    }
+
+    for (let i = 0; i < moves.length; i++) {
+        let temp = [...board];
+
+        movePiece(moves[i]);
+
+        nodes += perft(depth-1, turn_color);
+
+        board = [...temp];
+    }
+
+    return nodes;
+}
+
 addListenerToSquares();
 
 load_img_in_array(pieces_name_to_img_name) 
@@ -1418,5 +1466,7 @@ load_img_in_array(pieces_name_to_img_name)
 fen_to_board(board);
 
 console.log(board);
+
+//console.log(perft(4, turn_of));
 
 update_board_view(board);
