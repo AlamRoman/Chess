@@ -406,7 +406,12 @@ function makeMove(move) {
 
     movePiece(move);
 
-    previous_move = new Move(move.from, move.to);
+    //alternate turn
+    if (turn_of == WHITE) {
+        turn_of = BLACK;
+    }else{
+        turn_of = WHITE;
+    }
 
     isEndGame();
 
@@ -426,9 +431,14 @@ function makeMove(move) {
 
     movePiece(cMove);
 
-    isEndGame();
+    //alternate turn
+    if (turn_of == WHITE) {
+        turn_of = BLACK;
+    }else{
+        turn_of = WHITE;
+    }
 
-    previous_move = new Move(cMove.from, cMove.to)
+    isEndGame();
 
     //computer move
 
@@ -439,6 +449,7 @@ function makeMove(move) {
             showEndGameScreen();
         }, 500);
     }
+
 }
 
 function showEndGameScreen(){
@@ -513,6 +524,23 @@ function countTotalValidMovesFor(color){
 }
 
 function computerMove() {
+
+    /*
+    var req = new XMLHttpRequest;
+
+    req.onload = function () {
+        if(req.status == 200){
+            console.log(req.responseText);
+        }else{
+            alert("Error in computer move: " + req.status);
+        }
+    
+    }
+
+    req.open("GET", "computer-move.php?board="+JSON.stringify(board));
+    req.send();
+    */
+
     //TODO: make intelligent computer move
     let moves = Array();
 
@@ -557,12 +585,7 @@ function movePiece(move) {
         board[move.castlingRookToMove.from] = "";
     }
 
-    //alternate turn
-    if (turn_of == WHITE) {
-        turn_of = BLACK;
-    }else{
-        turn_of = WHITE;
-    }
+    previous_move = new Move(from, to);
         
 }
 
@@ -1467,6 +1490,7 @@ fen_to_board(board);
 
 console.log(board);
 
-//console.log(perft(4, turn_of));
+//perft
+//console.log(perft(3, turn_of));
 
 update_board_view(board);
