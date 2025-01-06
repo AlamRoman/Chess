@@ -7,6 +7,28 @@ const PIECES_IMG_FOLDER_PATH = "resources/pieces/";
 
 const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 
+class GameBoard{
+
+    constructor(board){
+        this.board = board;
+
+        this.castling_rights = {
+            white_queen_side: true,
+            white_king_side: true,
+            black_queen_side: true,
+            black_king_side: true,
+        }
+    }
+
+    init_board(){
+        this.board = Array(FILE * RANK).fill("");
+    }
+}
+
+gb = new GameBoard(null);
+
+gb.init_board();
+
 //king check test
 //const STARTING_FEN = "7k/2R5/Q7/8/8/8/8/8";
 
@@ -22,20 +44,10 @@ const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 //perft test
 //const STARTING_FEN = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R";
 
-let player_color = "w";
-let enemy_color = "b";
+let player_color = WHITE;
+let computer_color = BLACK;
 
 let turn_of = WHITE;
-
-//create the empty board
-let board = Array(FILE * RANK).fill("");
-
-let castling_rights = {
-    white_queen_side: true,
-    white_king_side: true,
-    black_queen_side: true,
-    black_king_side: true,
-}
 
 //hashmap with pieces name and their images
 let pieces_img = new Map();
@@ -55,13 +67,16 @@ let previous_move = null;
 let pawn_promotion_square=null;
 
 class Move {
-    constructor(from, to, enPassant_piece_position=null, castlingRookToMove=null, pawn_promoted_to=null){
+    constructor(from, to, enPassant_piece_position=null, castlingRookToMove=null, pawn_promoted_to=null, captured_piece=null){
         this.from = from;
         this.to = to;
 
         this.enPassant_piece_position = enPassant_piece_position;
         this.castlingRookToMove = castlingRookToMove;
         this.pawn_promoted_to = pawn_promoted_to;
+        this.captured_piece = captured_piece;
+
+        this.castling_rights_before = { ...gb.castling_rights };
     }
 
     getEnPassant_piece_position(){
@@ -78,6 +93,10 @@ class Move {
 
     setPawnPromotedTo(piece){
         this.pawn_promoted_to = piece;
+    }
+
+    getCastlingRightsBefore(){
+        return this.castling_rights_before;
     }
 }
 
@@ -183,6 +202,9 @@ function isUpperCase(char) {
 }
 
 function getPieceColor(piece) {
+    if (piece=="") {
+        return "";
+    }
     return (isUpperCase(piece)) ? WHITE : BLACK;
 }
 
@@ -254,7 +276,7 @@ function squareClicked(event) {
 
         hide_shown_valid_moves_in_html();
         
-    }else if (isFriendlyPiece(board[square_index], player_color)) {
+    }else if (isFriendlyPiece(gb.board[square_index], player_color)) {
 
         //unselect previous selected square
         if (Previous_selected_square.dom != null) {
@@ -270,11 +292,11 @@ function squareClicked(event) {
         dom_sq.classList.add("selected");
 
         //generate valid moves for selected piece
-        validMoves = generate_moves(board[square_index],square_index);
+        validMoves = generate_moves(gb.board[square_index],square_index, gb.board);
 
         console.log(validMoves);
 
-        //show the valid moves in the board
+        //show the valid moves in the gb.board
         show_valid_moves_in_html(validMoves);
 
         Previous_selected_square.dom = dom_sq;
@@ -282,7 +304,7 @@ function squareClicked(event) {
 
     }else{//move piece
 
-        if (isEnemyPiece(board[square_index], player_color) && Previous_selected_square.index != null) {
+        if (isEnemyPiece(gb.board[square_index], player_color) && Previous_selected_square.index != null) {
             //capture
         }else if(Previous_selected_square.index == null){
             return;
@@ -297,7 +319,7 @@ function squareClicked(event) {
 
         }else if(move.pawn_promoted_to != null){//pawn promotion menu
 
-            let piece_color = (isUpperCase(board[Previous_selected_square.index])) ? WHITE : BLACK;
+            let piece_color = (isUpperCase(gb.board[Previous_selected_square.index])) ? WHITE : BLACK;
 
             show_pawn_promotion_menu_at(square_index, piece_color);
 
@@ -324,11 +346,11 @@ function swap_player_and_flip_table() {
     if (player_color == WHITE) {
         document.getElementById("board").classList.add("flip-table");
         player_color = BLACK;
-        enemy_color = WHITE;
+        computer_color = WHITE;
     }else{
         document.getElementById("board").classList.remove("flip-table");
         player_color = WHITE;
-        enemy_color = BLACK;
+        computer_color = BLACK;
     }
         */
 }
@@ -404,7 +426,9 @@ function isEnemyPiece(piece, your_color) {
 
 function makeMove(move) {
 
-    movePiece(move);
+    movePiece(move, gb.board);
+
+    //console.log(evaluateBoard(gb.board));
 
     //alternate turn
     if (turn_of == WHITE) {
@@ -413,9 +437,9 @@ function makeMove(move) {
         turn_of = WHITE;
     }
 
-    isEndGame();
+    isEndGame(gb.board);
 
-    update_board_view(board);
+    update_board_view(gb.board);
 
     if (current_game_state != GAME_STATES.PLAYING) {
 
@@ -429,7 +453,9 @@ function makeMove(move) {
     //computer move
     let cMove = computerMove();
 
-    movePiece(cMove);
+    movePiece(cMove, gb.board);
+
+    //console.log(evaluateBoard(gb.board));
 
     //alternate turn
     if (turn_of == WHITE) {
@@ -438,11 +464,11 @@ function makeMove(move) {
         turn_of = WHITE;
     }
 
-    isEndGame();
+    isEndGame(gb.board);
 
     //computer move
 
-    update_board_view(board);
+    update_board_view(gb.board);
 
     if (current_game_state != GAME_STATES.PLAYING) {
         setTimeout(function(){
@@ -450,6 +476,58 @@ function makeMove(move) {
         }, 500);
     }
 
+}
+
+function movePiece(move, board) {
+    
+    let from = move.from;
+    let to = move.to;
+
+    let piece_to_move = board[from];
+
+    //if pawn promoted then update it
+    if(move.pawn_promoted_to != null){
+        piece_to_move = move.pawn_promoted_to;
+    }
+    
+    board[from] = "";
+    board[to] = piece_to_move;
+
+    //check and update castling right
+    check_and_update_castling_rights(piece_to_move, from, board);
+
+    //remove enpassant pawn
+    if (move.enPassant_piece_position != null) {
+
+        board[move.enPassant_piece_position] = "";
+        move.SetEnPassant_piece_position(null);
+    }
+
+    //moves castling rook
+    if (move.castlingRookToMove != null) {
+        board[move.castlingRookToMove.to] = board[move.castlingRookToMove.from];
+        board[move.castlingRookToMove.from] = "";
+    }
+
+    previous_move = new Move(from, to);
+        
+}
+
+function undoMove(move, board){
+    let from = move.from;
+    let to = move.to;
+
+    let movedPiece = board[to];
+    board[to] = "";
+    board[from] = movedPiece;
+
+    //uncapture piece
+    if (move.captured_piece !== null) {
+        board[to] = move.captured_piece;
+    }
+
+    //restore previous castling rights
+    gb.castling_rights = move.getCastlingRightsBefore();
 }
 
 function showEndGameScreen(){
@@ -463,24 +541,24 @@ function showEndGameScreen(){
     }
 }
 
-function isEndGame() {
+function isEndGame(board) {
 
     //TODO: other endgames
 
-    let white_total_valid_moves = countTotalValidMovesFor(WHITE);
-    let black_total_valid_moves = countTotalValidMovesFor(BLACK);
+    let white_total_valid_moves = countTotalValidMovesFor(WHITE, board);
+    let black_total_valid_moves = countTotalValidMovesFor(BLACK, board);
 
     if (isKingInCheck(WHITE, board)) {
         if (white_total_valid_moves == 0) {
 
             current_game_state = GAME_STATES.BLACK_WON;
-            return;
+            return true;
         }
     }else{
         if (turn_of==WHITE && white_total_valid_moves == 0) {
 
             current_game_state = GAME_STATES.DRAW_BY_STALEMATE;
-            return;
+            return true;
         }
     }
     
@@ -488,18 +566,18 @@ function isEndGame() {
         if (black_total_valid_moves == 0) {
             
             current_game_state = GAME_STATES.WHITE_WON;
-            return;
+            return true;
         }
     }else{
         if (turn_of==BLACK && black_total_valid_moves == 0) {
 
             current_game_state = GAME_STATES.DRAW_BY_STALEMATE;
-            return;
+            return true;
         }
     }
 }
 
-function countTotalValidMovesFor(color){
+function countTotalValidMovesFor(color, board){
     let totalMoves = 0;
 
     for (let i = 0; i < board.length; i++) {
@@ -507,13 +585,13 @@ function countTotalValidMovesFor(color){
         if (color == WHITE) {
             if (board[i] != "" && isUpperCase(board[i])) {
 
-                let moves = generate_moves(board[i], i);
+                let moves = generate_moves(board[i], i,board);
                 
                 totalMoves += moves.length;
             }
         }else{
             if (board[i] != "" && !isUpperCase(board[i])) {
-                let moves = generate_moves(board[i], i);
+                let moves = generate_moves(board[i], i,board);
                 
                 totalMoves += moves.length;
             }
@@ -542,87 +620,62 @@ function computerMove() {
     */
 
     //TODO: make intelligent computer move
+
+    /*
     let moves = Array();
 
-    for (let i = 0; i < board.length; i++) {
-        if (isFriendlyPiece(board[i],enemy_color)) {
-            let temp = generate_moves(board[i], i);
+    for (let i = 0; i < gb.board.length; i++) {
+        if (isFriendlyPiece(gb.board[i],computer_color)) {
+            let temp = generate_moves(gb.board[i], i, gb.board);
 
             moves = [...moves, ...temp];
         }
     }
 
     return moves[Math.floor(Math.random() * moves.length)];
+    */
+
+    const { move, value } = minimax(gb.board, false, 2);
+
+    console.log(move);
+
+    return move;
 }
 
-function movePiece(move) {
-    let from = move.from;
-    let to = move.to;
+function check_and_update_castling_rights(piece_to_move, from, board){
 
-    let piece_to_move = board[from];
+    if(piece_to_move == "K" && gb.castling_rights.white_king_side && gb.castling_rights.white_queen_side){//white king moved
 
-    //if pawn promoted then update it
-    if(move.pawn_promoted_to != null){
-        piece_to_move = move.pawn_promoted_to;
-    }
-    
-    board[from] = "";
-    board[to] = piece_to_move;
+        gb.castling_rights.white_king_side = false;
+        gb.castling_rights.white_queen_side = false;
 
-    //check and update castling right
-    check_and_update_castling_rights(piece_to_move, from);
+    }else if(piece_to_move == "k" && gb.castling_rights.black_king_side && gb.castling_rights.black_queen_side ){//black king moved
 
-    //remove enpassant pawn
-    if (move.getEnPassant_piece_position() != null) {
-
-        board[move.getEnPassant_piece_position()] = "";
-        move.SetEnPassant_piece_position(null);
-    }
-
-    //moves castling rook
-    if (move.castlingRookToMove != null) {
-        board[move.castlingRookToMove.to] = board[move.castlingRookToMove.from];
-        board[move.castlingRookToMove.from] = "";
-    }
-
-    previous_move = new Move(from, to);
-        
-}
-
-function check_and_update_castling_rights(piece_to_move, from){
-
-    if(piece_to_move == "K" && castling_rights.white_king_side && castling_rights.white_queen_side){//white king moved
-
-        castling_rights.white_king_side = false;
-        castling_rights.white_queen_side = false;
-
-    }else if(piece_to_move == "k" && castling_rights.black_king_side && castling_rights.black_queen_side ){//black king moved
-
-        castling_rights.black_king_side = false;
-        castling_rights.black_queen_side = false;
+        gb.castling_rights.black_king_side = false;
+        gb.castling_rights.black_queen_side = false;
         
     }
     
-    if (castling_rights.white_queen_side && board[56] != "R") {//white queen side rook moved
+    if (gb.castling_rights.white_queen_side && board[56] != "R") {//white queen side rook moved
 
-        castling_rights.white_queen_side = false;
+        gb.castling_rights.white_queen_side = false;
 
-    }else if(castling_rights.white_king_side && board[63] != "R"){//white king side rook moved
+    }else if(gb.castling_rights.white_king_side && board[63] != "R"){//white king side rook moved
 
-        castling_rights.white_king_side = false;
+        gb.castling_rights.white_king_side = false;
     }
     
-    if (castling_rights.black_queen_side && board[0] != "r") {//black queen side rook moved
+    if (gb.castling_rights.black_queen_side && board[0] != "r") {//black queen side rook moved
 
-        castling_rights.black_queen_side = false;
+        gb.castling_rights.black_queen_side = false;
 
-    }else if(castling_rights.black_king_side && board[7] != "r"){//black king side rook moved
+    }else if(gb.castling_rights.black_king_side && board[7] != "r"){//black king side rook moved
 
-        castling_rights.black_king_side = false;
+        gb.castling_rights.black_king_side = false;
     }
 }
 
-function generate_moves(piece, position) {
+function generate_moves(piece, position, board) {
 
     const y = Math.floor(position / 8); // Row
     const x = position % 8;              // Column
@@ -641,12 +694,12 @@ function generate_moves(piece, position) {
             let newIndex = row_col_to_position(y-1, x);
 
             if (y==1) {
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "Q");
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "R");
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "B");
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "N");
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "Q",board);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "R",board);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "B",board);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "N",board);
             }else{
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
             }
 
             //pawn move 2 square forward if never moved
@@ -654,7 +707,7 @@ function generate_moves(piece, position) {
                 
                 let newIndex = row_col_to_position(y-2, x);
 
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
             }
         }
 
@@ -664,12 +717,12 @@ function generate_moves(piece, position) {
 
             if (isEnemyPiece(board[newIndex], "w")) {
                 if (y==1) {
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "Q");
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "R");
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "B");
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "N");
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "Q",board);
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "R",board);
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "B",board);
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "N",board);
                 }else{
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
                 }
             }
         }
@@ -680,12 +733,12 @@ function generate_moves(piece, position) {
 
             if (isEnemyPiece(board[newIndex], "w")) {
                 if (y==1) {
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "Q");
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "R");
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "B");
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "N");
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "Q",board);
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "R",board);
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "B",board);
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "N",board);
                 }else{
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
                 }
             }
         }
@@ -703,7 +756,7 @@ function generate_moves(piece, position) {
                     let newIndex =  (y-1) * 8 + (x-1);
 
                     /*
-                    let moveAdded = makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                    let moveAdded = makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
 
                     if (moveAdded) {
                         moves[moves.length - 1].SetEnPassant_piece_position(previous_move.to);
@@ -750,12 +803,12 @@ function generate_moves(piece, position) {
             let newIndex = row_col_to_position(y+1, x);
 
             if (y==6) {
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "q");
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "r");
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "b");
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "n");
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "q",board);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "r",board);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "b",board);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "n",board);
             }else{
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
             }
 
             //pawn move 2 square forward if never moved
@@ -763,7 +816,7 @@ function generate_moves(piece, position) {
                 
                 let newIndex = row_col_to_position(y+2, x);
 
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
             }
         }
 
@@ -773,12 +826,12 @@ function generate_moves(piece, position) {
 
             if (isEnemyPiece(board[newIndex], "b")) {
                 if (y==6) {
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "q");
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "r");
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "b");
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "n");
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "q",board);
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "r",board);
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "b",board);
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "n",board);
                 }else{
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
                 }
             }
         }
@@ -789,12 +842,12 @@ function generate_moves(piece, position) {
 
             if (isEnemyPiece(board[newIndex], "b")) {
                 if (y==6) {
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "q");
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "r");
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "b");
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "n");
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "q",board);
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "r",board);
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "b",board);
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "n",board);
                 }else{
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
                 }
             }
         }
@@ -849,11 +902,11 @@ function generate_moves(piece, position) {
             const newIndex = y * 8 + nx;
             if (board[newIndex] == "") {
 
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
 
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
 
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
 
                 break;
             }else {
@@ -866,11 +919,11 @@ function generate_moves(piece, position) {
             const newIndex = y * 8 + nx;
             if (board[newIndex] == "") {
 
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
 
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
 
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
 
                 break;
             }else {
@@ -883,11 +936,11 @@ function generate_moves(piece, position) {
             const newIndex = ny * 8 + x;
             if (board[newIndex] == "") {
                 
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
 
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
                 
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
 
                 break;
             }else {
@@ -900,11 +953,11 @@ function generate_moves(piece, position) {
             const newIndex = ny * 8 + x;
             if (board[newIndex] == "") {
                 
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
 
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
                 
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
 
                 break;
             } else {
@@ -919,11 +972,11 @@ function generate_moves(piece, position) {
             const newIndex = ny * 8 + nx;
             if (board[newIndex] == "") {
 
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
 
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
                 
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
 
                 break;
             }else {
@@ -936,11 +989,11 @@ function generate_moves(piece, position) {
             const newIndex = ny * 8 + nx;
             if (board[newIndex] == "") {
                 
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
 
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
                 
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
 
                 break;
             }else {
@@ -953,11 +1006,11 @@ function generate_moves(piece, position) {
             const newIndex = ny * 8 + nx;
             if (board[newIndex] == "") {
                 
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
 
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
                 
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
 
                 break;
             }else {
@@ -970,11 +1023,11 @@ function generate_moves(piece, position) {
             const newIndex = ny * 8 + nx;
             if (board[newIndex] == "") {
                 
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
 
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
                 
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
 
                 break;
             }else {
@@ -990,11 +1043,11 @@ function generate_moves(piece, position) {
             const newIndex = y * 8 + nx;
             if (board[newIndex] == "") {
                 
-                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves,board);
 
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
                 
-                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves,board);
 
                 break;
             }else {
@@ -1007,11 +1060,11 @@ function generate_moves(piece, position) {
             const newIndex = y * 8 + nx;
             if (board[newIndex] == "") {
                 
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
 
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
                 
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
 
                 break;
             }else {
@@ -1024,11 +1077,11 @@ function generate_moves(piece, position) {
             const newIndex = ny * 8 + x;
             if (board[newIndex] == "") {
                 
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
 
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
                 
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
 
                 break;
             }else {
@@ -1041,11 +1094,11 @@ function generate_moves(piece, position) {
             const newIndex = ny * 8 + x;
             if (board[newIndex] == "") {
                 
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
 
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
                 
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
 
                 break;
             } else {
@@ -1058,11 +1111,11 @@ function generate_moves(piece, position) {
             const newIndex = ny * 8 + nx;
             if (board[newIndex] == "") {
                 
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
 
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
                 
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
 
                 break;
             }else {
@@ -1075,11 +1128,11 @@ function generate_moves(piece, position) {
             const newIndex = ny * 8 + nx;
             if (board[newIndex] == "") {
                 
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
 
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
                 
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
 
                 break;
             }else {
@@ -1092,11 +1145,11 @@ function generate_moves(piece, position) {
             const newIndex = ny * 8 + nx;
             if (board[newIndex] == "") {
                 
-                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves,board);
 
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
                 
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
 
                 break;
             }else {
@@ -1109,11 +1162,11 @@ function generate_moves(piece, position) {
             const newIndex = ny * 8 + nx;
             if (board[newIndex] == "") {
                 
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
 
             }else if(!isFriendlyPiece(board[newIndex], pieceColor)){
                 
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
 
                 break;
             }else {
@@ -1128,7 +1181,7 @@ function generate_moves(piece, position) {
 
             if (!isFriendlyPiece(board[newIndex], pieceColor)) {
                 
-                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves,board);
             }
         }
         
@@ -1138,7 +1191,7 @@ function generate_moves(piece, position) {
 
             if (!isFriendlyPiece(board[newIndex], pieceColor)) {
                 
-                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves,board);
             }
         }
         
@@ -1148,7 +1201,7 @@ function generate_moves(piece, position) {
 
             if (!isFriendlyPiece(board[newIndex], pieceColor)) {
                 
-                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves,board);
             }
         }
         
@@ -1158,7 +1211,7 @@ function generate_moves(piece, position) {
 
             if (!isFriendlyPiece(board[newIndex], pieceColor)) {
                 
-                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves,board);
             }
         }
 
@@ -1169,7 +1222,7 @@ function generate_moves(piece, position) {
 
             if (!isFriendlyPiece(board[newIndex], pieceColor)) {
                 
-                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves,board);
             }
         }
 
@@ -1180,7 +1233,7 @@ function generate_moves(piece, position) {
 
             if (!isFriendlyPiece(board[newIndex], pieceColor)) {
                 
-                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves,board);
             }
         }
 
@@ -1191,7 +1244,7 @@ function generate_moves(piece, position) {
 
             if (!isFriendlyPiece(board[newIndex], pieceColor)) {
                 
-                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves,board);
             }
         }
 
@@ -1202,15 +1255,15 @@ function generate_moves(piece, position) {
 
             if (!isFriendlyPiece(board[newIndex], pieceColor)) {
                 
-                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves);
+                makeTemporaryMoveAndCheck(piece,pieceColor, position, newIndex, moves,board);
             }
         }
 
         //castling
 
         let your_back_rank = (pieceColor == WHITE) ? 7 : 0;
-        let your_king_side_castiling_right = (pieceColor == WHITE) ? castling_rights.white_king_side : castling_rights.black_king_side;
-        let your_queen_side_castling_right = (pieceColor == WHITE) ? castling_rights.white_queen_side : castling_rights.black_queen_side;
+        let your_king_side_castiling_right = (pieceColor == WHITE) ? gb.castling_rights.white_king_side : gb.castling_rights.black_king_side;
+        let your_queen_side_castling_right = (pieceColor == WHITE) ? gb.castling_rights.white_queen_side : gb.castling_rights.black_queen_side;
 
         if (y == your_back_rank && (your_king_side_castiling_right || your_queen_side_castling_right) && !isKingInCheck(pieceColor, board)) {
 
@@ -1283,7 +1336,7 @@ function generate_moves(piece, position) {
                 const newIndex = ny * 8 + nx;
 
                 if (!isFriendlyPiece(board[newIndex], pieceColor)) {
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves);
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
                 }
             }
         }
@@ -1292,15 +1345,17 @@ function generate_moves(piece, position) {
     return moves;
 }
 
-function makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, pawn_promoted_to = null){
+function makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board, pawn_promoted_to = null){
+    
     let board_copy = Array.from(board);
 
     //make the move
+    let captured_piece = board_copy[newIndex];
     board_copy[newIndex] = piece;
     board_copy[position] = "";
 
     if (!isKingInCheck(pieceColor, board_copy)) {
-        moves.push(new Move(position, newIndex, null, null, pawn_promoted_to));//add to legal moves
+        moves.push(new Move(position, newIndex, null, null, pawn_promoted_to, captured_piece));//add to legal moves
 
         return true;
     }
@@ -1445,7 +1500,7 @@ function hide_shown_valid_moves_in_html() {
     valid_squares_shown = [];
 }
 
-function perft(depth, turn_color) {
+function perft(depth, turn_color, board) {
 
     if (depth == 0) {
         return 1;
@@ -1457,7 +1512,7 @@ function perft(depth, turn_color) {
 
     for (let i = 0; i < board.length; i++) {
         if (board[i] != "" && getPieceColor(board[i]) == turn_color) {
-            let temp = generate_moves(board[i], i);
+            let temp = generate_moves(board[i], i,board);
 
             moves = [...moves, ...temp];
         }
@@ -1472,9 +1527,9 @@ function perft(depth, turn_color) {
     for (let i = 0; i < moves.length; i++) {
         let temp = [...board];
 
-        movePiece(moves[i]);
+        movePiece(moves[i], board);
 
-        nodes += perft(depth-1, turn_color);
+        nodes += perft(depth-1, turn_color, board);
 
         board = [...temp];
     }
@@ -1482,15 +1537,222 @@ function perft(depth, turn_color) {
     return nodes;
 }
 
+function minimax(b, isMaximizingPlayer, depth) {
+    if (depth  <= 0 || isEndGame(b) ) {
+         return evaluateBoard(b);
+    }
+
+    let bestMove = null;
+    let bestValue = isMaximizingPlayer ? -Infinity : Infinity;
+
+    let all_moves = [];
+
+    for (let i = 0; i < b.length; i++) {
+        if (getPieceColor(b[i]) == computer_color) {
+            let piece_moves = generate_moves(b[i],i,b);
+            if (piece_moves.length > 0) {
+                all_moves = [...all_moves, ...piece_moves];
+            }
+        }
+    }
+
+    for (const move of all_moves) {
+        movePiece(move, b);
+
+        const { value } = minimax(b, !isMaximizingPlayer, depth - 1);
+
+        undoMove(move, b);
+
+        if (isMaximizingPlayer) {
+            if (value > bestValue) {
+                bestValue = value;
+                bestMove = move;
+            }
+        }else{
+            if (value < bestValue) {
+                bestValue = value;
+                bestMove = move;
+            }
+        }
+    }
+
+    return { move: bestMove, value: bestValue };
+}
+
+function evaluateBoard(board) {
+
+    const pieceValues = {
+        P: 1,   // Pawn
+        N: 3,   // Knight
+        B: 3,   // Bishop
+        R: 5,   // Rook
+        Q: 9,   // Queen
+        K: 0,    // King (not evaluated numerically)
+        p: 1,   // Pawn
+        n: 3,   // Knight
+        b: 3,   // Bishop
+        r: 5,   // Rook
+        q: 9,   // Queen
+        k: 0    // King (not evaluated numerically)
+    };
+
+    // Piece-Square Tables for various pieces
+    const pieceSquareTables = {
+        P: [
+            0, 0, 0, 0, 0, 0, 0, 0,
+            5, 5, 10, 10, 10, 10, 5, 5,
+            1, 1, 5, 5, 5, 5, 1, 1,
+            0, 0, 0, 5, 5, 0, 0, 0,
+            1, 1, 0, 0, 0, 0, 1, 1,
+            2, 2, 1, 1, 1, 1, 2, 2,
+            3, 3, 2, 2, 2, 2, 3, 3,
+            0, 0, 0, 0, 0, 0, 0, 0
+        ],
+        p:  [
+            0, 0, 0, 0, 0, 0, 0, 0,
+            -5, -5, -10, -10, -10, -10, -5, -5,
+            -1, -1, -5, -5, -5, -5, -1, -1,
+            0, 0, 0, -5, -5, 0, 0, 0,
+            -1, -1, 0, 0, 0, 0, -1, -1,
+            -2, -2, -1, -1, -1, -1, -2, -2,
+            -3, -3, -2, -2, -2, -2, -3, -3,
+            0, 0, 0, 0, 0, 0, 0, 0
+        ],
+        N: [
+            -50, -40, -30, -30, -30, -30, -40, -50,
+            -40, -20, 0, 5, 5, 0, -20, -40,
+            -30, 5, 10, 15, 15, 10, 5, -30,
+            -30, 0, 15, 20, 20, 15, 0, -30,
+            -30, 5, 15, 20, 20, 15, 5, -30,
+            -30, 0, 5, 15, 15, 5, 0, -30,
+            -40, -20, 0, 0, 0, 0, -20, -40,
+            -50, -40, -30, -30, -30, -30, -40, -50
+        ],
+        n: [
+            50, 40, 30, 30, 30, 30, 40, 50,
+            40, 20, 0, -5, -5, 0, 20, 40,
+            30, -5, -10, -15, -15, -10, -5, 30,
+            30, 0, -15, -20, -20, -15, 0, 30,
+            30, -5, -15, -20, -20, -15, -5, 30,
+            30, 0, -5, -15, -15, -5, 0, 30,
+            40, 20, 0, 0, 0, 0, 20, 40,
+            50, 40, 30, 30, 30, 30, 40, 50
+        ],
+        B: [
+            -20, -10, -10, -10, -10, -10, -10, -20,
+            -10, 5, 0, 0, 0, 0, 5, -10,
+            -10, 0, 5, 10, 10, 5, 0, -10,
+            -10, 0, 10, 15, 15, 10, 0, -10,
+            -10, 0, 10, 15, 15, 10, 0, -10,
+            -10, 5, 0, 0, 0, 0, 5, -10,
+            -20, -10, -10, -10, -10, -10, -10, -20,
+            -20, -10, -10, -10, -10, -10, -10, -20
+        ],
+        b: [
+            20, 10, 10, 10, 10, 10, 10, 20,
+            10, -5, 0, 0, 0, 0, -5, 10,
+            10, 0, -5, -10, -10, -5, 0, 10,
+            10, 0, -10, -15, -15, -10, 0, 10,
+            10, 0, -10, -15, -15, -10, 0, 10,
+            10, -5, 0, 0, 0, 0, -5, 10,
+            20, 10, 10, 10, 10, 10, 10, 20,
+            20, 10, 10, 10, 10, 10, 10, 20
+        ],
+        R: [
+            0, 5, 10, 10, 10, 10, 5, 0,
+            0, 5, 10, 15, 15, 10, 5, 0,
+            0, 5, 15, 20, 20, 15, 5, 0,
+            0, 5, 15, 25, 25, 15, 5, 0,
+            0, 5, 15, 25, 25, 15, 5, 0,
+            0, 5, 15, 20, 20, 15, 5, 0,
+            0, 5, 10, 10, 10, 10, 5, 0,
+            0, 5, 10, 10, 10, 10, 5, 0
+        ],
+        r: [
+            0, -5, -10, -10, -10, -10, -5, 0,
+            0, -5, -10, -15, -15, -10, -5, 0,
+            0, -5, -15, -20, -20, -15, -5, 0,
+            0, -5, -15, -25, -25, -15, -5, 0,
+            0, -5, -15, -25, -25, -15, -5, 0,
+            0, -5, -15, -20, -20, -15, -5, 0,
+            0, -5, -10, -10, -10, -10, -5, 0,
+            0, -5, -10, -10, -10, -10, -5, 0
+        ],
+        Q: [
+            -20, -10, -10, 0, 0, -10, -10, -20,
+            -10, 0, 5, 10, 10, 5, 0, -10,
+            -10, 5, 10, 15, 15, 10, 5, -10,
+            0, 10, 15, 20, 20, 15, 10, 0,
+            0, 10, 15, 20, 20, 15, 10, 0,
+            -10, 5, 10, 15, 15, 10, 5, -10,
+            -10, 0, 5, 10, 10, 5, 0, -10,
+            -20, -10, -10, 0, 0, -10, -10, -20
+        ],
+        q: [
+            20, 10, 10, 0, 0, 10, 10, 20,
+            10, 0, -5, -10, -10, -5, 0, 10,
+            10, -5, -10, -15, -15, -10, -5, 10,
+            0, -10, -15, -20, -20, -15, -10, 0,
+            0, -10, -15, -20, -20, -15, -10, 0,
+            10, -5, -10, -15, -15, -10, -5, 10,
+            10, 0, -5, -10, -10, -5, 0, 10,
+            20, 10, 10, 0, 0, 10, 10, 20
+        ],
+        K: [
+            -30, -40, -50, -60, -60, -50, -40, -30,
+            -40, -50, -60, -70, -70, -60, -50, -40,
+            -50, -60, -70, -80, -80, -70, -60, -50,
+            -60, -70, -80, -90, -90, -80, -70, -60,
+            -60, -70, -80, -90, -90, -80, -70, -60,
+            -50, -60, -70, -80, -80, -70, -60, -50,
+            -40, -50, -60, -70, -70, -60, -50, -40,
+            -30, -40, -50, -60, -60, -50, -40, -30
+        ],
+        k: [
+            30, 40, 50, 60, 60, 50, 40, 30,
+            40, 50, 60, 70, 70, 60, 50, 40,
+            50, 60, 70, 80, 80, 70, 60, 50,
+            60, 70, 80, 90, 90, 80, 70, 60,
+            60, 70, 80, 90, 90, 80, 70, 60,
+            50, 60, 70, 80, 80, 70, 60, 50,
+            40, 50, 60, 70, 70, 60, 50, 40,
+            30, 40, 50, 60, 60, 50, 40, 30
+        ]
+    };
+
+    let value = 0;
+
+    for (let i = 0; i < board.length; i++) {
+        const piece = board[i];
+        if (piece !== "") {
+            const pieceColor = getPieceColor(piece);
+            //const pieceType = piece.toUpperCase();
+            console.log(piece, pieceValues[piece]);
+            const pieceValue = pieceValues[piece];
+
+            value += pieceValue;
+
+            const positionValue = pieceSquareTables[piece][i];
+            value += positionValue;
+
+        }
+    }
+
+    return value;
+}
+
+
 addListenerToSquares();
 
 load_img_in_array(pieces_name_to_img_name) 
 
-fen_to_board(board);
+fen_to_board(gb.board);
 
-console.log(board);
+console.log(gb.board);
 
 //perft
-//console.log(perft(3, turn_of));
+//console.log(perft(3, turn_of, gb.board));
 
-update_board_view(board);
+update_board_view(gb.board);
+
+console.log(evaluateBoard(gb.board));
