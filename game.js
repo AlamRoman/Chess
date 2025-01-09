@@ -5,8 +5,6 @@ const WHITE = "w";
 const BLACK = "b";
 const PIECES_IMG_FOLDER_PATH = "resources/pieces/";
 
-const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
-
 class GameBoard{
 
     constructor(board){
@@ -28,6 +26,8 @@ class GameBoard{
 gb = new GameBoard(null);
 
 gb.init_board();
+
+const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 
 //king check test
 //const STARTING_FEN = "7k/2R5/Q7/8/8/8/8/8";
@@ -75,6 +75,7 @@ class Move {
         this.castlingRookToMove = castlingRookToMove;
         this.pawn_promoted_to = pawn_promoted_to;
         this.captured_piece = captured_piece;
+        this.promoted_pawn = null;
 
         this.castling_rights_before = { ...gb.castling_rights };
     }
@@ -476,6 +477,8 @@ function makeMove(move) {
         }, 500);
     }
 
+    console.log(gb.board);
+
 }
 
 function movePiece(move, board) {
@@ -488,6 +491,11 @@ function movePiece(move, board) {
     //if pawn promoted then update it
     if(move.pawn_promoted_to != null){
         piece_to_move = move.pawn_promoted_to;
+        move.promoted_pawn = move.from;
+    }
+
+    if (board[to] != "") {
+        move.captured_piece = board[to];
     }
     
     board[from] = "";
@@ -518,6 +526,12 @@ function undoMove(move, board){
     let to = move.to;
 
     let movedPiece = board[to];
+
+    //unpromote pawn
+    if(move.promoted_pawn != null){
+        movedPiece = move.promoted_pawn;
+    }
+
     board[to] = "";
     board[from] = movedPiece;
 
@@ -635,9 +649,9 @@ function computerMove() {
     return moves[Math.floor(Math.random() * moves.length)];
     */
 
-    const { move, value } = minimax(gb.board, false, 2);
+    const { move, value } = minimax([...gb.board], false, 2);
 
-    console.log(move);
+    console.log("computer : ",move);
 
     return move;
 }
@@ -1538,18 +1552,19 @@ function perft(depth, turn_color, board) {
 }
 
 function minimax(b, isMaximizingPlayer, depth) {
-    if (depth  <= 0 || isEndGame(b) ) {
-         return evaluateBoard(b);
+
+    if (depth <= 0 || isEndGame(b)) {
+        return { move: null, value: evaluateBoard(b) };
     }
 
     let bestMove = null;
     let bestValue = isMaximizingPlayer ? -Infinity : Infinity;
 
-    let all_moves = [];
 
+    let all_moves = [];
     for (let i = 0; i < b.length; i++) {
-        if (getPieceColor(b[i]) == computer_color) {
-            let piece_moves = generate_moves(b[i],i,b);
+        if (getPieceColor(b[i]) === (isMaximizingPlayer ?  player_color : computer_color)) {
+            const piece_moves = generate_moves(b[i], i, b);
             if (piece_moves.length > 0) {
                 all_moves = [...all_moves, ...piece_moves];
             }
@@ -1558,9 +1573,7 @@ function minimax(b, isMaximizingPlayer, depth) {
 
     for (const move of all_moves) {
         movePiece(move, b);
-
         const { value } = minimax(b, !isMaximizingPlayer, depth - 1);
-
         undoMove(move, b);
 
         if (isMaximizingPlayer) {
@@ -1568,7 +1581,7 @@ function minimax(b, isMaximizingPlayer, depth) {
                 bestValue = value;
                 bestMove = move;
             }
-        }else{
+        } else {
             if (value < bestValue) {
                 bestValue = value;
                 bestMove = move;
@@ -1579,162 +1592,148 @@ function minimax(b, isMaximizingPlayer, depth) {
     return { move: bestMove, value: bestValue };
 }
 
+
 function evaluateBoard(board) {
 
     const pieceValues = {
-        P: 1,   // Pawn
-        N: 3,   // Knight
-        B: 3,   // Bishop
-        R: 5,   // Rook
-        Q: 9,   // Queen
-        K: 0,    // King (not evaluated numerically)
-        p: 1,   // Pawn
-        n: 3,   // Knight
-        b: 3,   // Bishop
-        r: 5,   // Rook
-        q: 9,   // Queen
-        k: 0    // King (not evaluated numerically)
+        P: 1, 
+        N: 3,  
+        B: 3, 
+        R: 5, 
+        Q: 9,  
+        K: 0, 
+        p: 1,  
+        n: 3,   
+        b: 3,  
+        r: 5,  
+        q: 9,  
+        k: 0   
     };
 
-    // Piece-Square Tables for various pieces
     const pieceSquareTables = {
+        // Pawn Position Table (white and black are mirrored)
         P: [
-            0, 0, 0, 0, 0, 0, 0, 0,
-            5, 5, 10, 10, 10, 10, 5, 5,
-            1, 1, 5, 5, 5, 5, 1, 1,
-            0, 0, 0, 5, 5, 0, 0, 0,
-            1, 1, 0, 0, 0, 0, 1, 1,
-            2, 2, 1, 1, 1, 1, 2, 2,
-            3, 3, 2, 2, 2, 2, 3, 3,
+            0, 5, 5, 0, 0, 5, 5, 0,
+            0, 10, 10, 5, 5, 10, 10, 0,
+            0, 10, 20, 20, 20, 20, 10, 0,
+            5, 20, 30, 35, 35, 30, 20, 5,
+            5, 20, 30, 35, 35, 30, 20, 5,
+            0, 10, 20, 20, 20, 20, 10, 0,
+            0, 5, 10, 10, 10, 10, 5, 0,
             0, 0, 0, 0, 0, 0, 0, 0
         ],
-        p:  [
-            0, 0, 0, 0, 0, 0, 0, 0,
-            -5, -5, -10, -10, -10, -10, -5, -5,
-            -1, -1, -5, -5, -5, -5, -1, -1,
-            0, 0, 0, -5, -5, 0, 0, 0,
-            -1, -1, 0, 0, 0, 0, -1, -1,
-            -2, -2, -1, -1, -1, -1, -2, -2,
-            -3, -3, -2, -2, -2, -2, -3, -3,
-            0, 0, 0, 0, 0, 0, 0, 0
-        ],
+    
+        // Knight Position Table
         N: [
-            -50, -40, -30, -30, -30, -30, -40, -50,
-            -40, -20, 0, 5, 5, 0, -20, -40,
-            -30, 5, 10, 15, 15, 10, 5, -30,
-            -30, 0, 15, 20, 20, 15, 0, -30,
-            -30, 5, 15, 20, 20, 15, 5, -30,
-            -30, 0, 5, 15, 15, 5, 0, -30,
-            -40, -20, 0, 0, 0, 0, -20, -40,
-            -50, -40, -30, -30, -30, -30, -40, -50
-        ],
-        n: [
-            50, 40, 30, 30, 30, 30, 40, 50,
-            40, 20, 0, -5, -5, 0, 20, 40,
-            30, -5, -10, -15, -15, -10, -5, 30,
-            30, 0, -15, -20, -20, -15, 0, 30,
-            30, -5, -15, -20, -20, -15, -5, 30,
-            30, 0, -5, -15, -15, -5, 0, 30,
-            40, 20, 0, 0, 0, 0, 20, 40,
-            50, 40, 30, 30, 30, 30, 40, 50
-        ],
-        B: [
-            -20, -10, -10, -10, -10, -10, -10, -20,
-            -10, 5, 0, 0, 0, 0, 5, -10,
-            -10, 0, 5, 10, 10, 5, 0, -10,
-            -10, 0, 10, 15, 15, 10, 0, -10,
-            -10, 0, 10, 15, 15, 10, 0, -10,
-            -10, 5, 0, 0, 0, 0, 5, -10,
-            -20, -10, -10, -10, -10, -10, -10, -20,
-            -20, -10, -10, -10, -10, -10, -10, -20
-        ],
-        b: [
-            20, 10, 10, 10, 10, 10, 10, 20,
-            10, -5, 0, 0, 0, 0, -5, 10,
-            10, 0, -5, -10, -10, -5, 0, 10,
-            10, 0, -10, -15, -15, -10, 0, 10,
-            10, 0, -10, -15, -15, -10, 0, 10,
-            10, -5, 0, 0, 0, 0, -5, 10,
-            20, 10, 10, 10, 10, 10, 10, 20,
-            20, 10, 10, 10, 10, 10, 10, 20
-        ],
-        R: [
-            0, 5, 10, 10, 10, 10, 5, 0,
+            -10, -5, 0, 0, 0, 0, -5, -10,
+            -5, 0, 5, 10, 10, 5, 0, -5,
             0, 5, 10, 15, 15, 10, 5, 0,
-            0, 5, 15, 20, 20, 15, 5, 0,
-            0, 5, 15, 25, 25, 15, 5, 0,
-            0, 5, 15, 25, 25, 15, 5, 0,
-            0, 5, 15, 20, 20, 15, 5, 0,
+            0, 10, 15, 20, 20, 15, 10, 0,
+            0, 10, 15, 20, 20, 15, 10, 0,
+            0, 5, 10, 15, 15, 10, 5, 0,
+            -5, 0, 5, 10, 10, 5, 0, -5,
+            -10, -5, 0, 0, 0, 0, -5, -10
+        ],
+    
+        // Bishop Position Table
+        B: [
+            -10, -5, -5, -5, -5, -5, -5, -10,
+            -5, 0, 0, 0, 0, 0, 0, -5,
+            -5, 0, 5, 10, 10, 5, 0, -5,
+            -5, 5, 10, 10, 10, 10, 5, -5,
+            -5, 5, 10, 10, 10, 10, 5, -5,
+            -5, 0, 5, 10, 10, 5, 0, -5,
+            -5, 0, 0, 0, 0, 0, 0, -5,
+            -10, -5, -5, -5, -5, -5, -5, -10
+        ],
+    
+        // Rook Position Table
+        R: [
+            0, 0, 5, 10, 10, 5, 0, 0,
             0, 5, 10, 10, 10, 10, 5, 0,
-            0, 5, 10, 10, 10, 10, 5, 0
+            0, 0, 5, 10, 10, 5, 0, 0,
+            0, 0, 5, 10, 10, 5, 0, 0,
+            0, 0, 5, 10, 10, 5, 0, 0,
+            0, 0, 5, 10, 10, 5, 0, 0,
+            0, 0, 5, 10, 10, 5, 0, 0,
+            0, 0, 5, 10, 10, 5, 0, 0
         ],
-        r: [
-            0, -5, -10, -10, -10, -10, -5, 0,
-            0, -5, -10, -15, -15, -10, -5, 0,
-            0, -5, -15, -20, -20, -15, -5, 0,
-            0, -5, -15, -25, -25, -15, -5, 0,
-            0, -5, -15, -25, -25, -15, -5, 0,
-            0, -5, -15, -20, -20, -15, -5, 0,
-            0, -5, -10, -10, -10, -10, -5, 0,
-            0, -5, -10, -10, -10, -10, -5, 0
-        ],
+    
+        // Queen Position Table
         Q: [
-            -20, -10, -10, 0, 0, -10, -10, -20,
-            -10, 0, 5, 10, 10, 5, 0, -10,
-            -10, 5, 10, 15, 15, 10, 5, -10,
-            0, 10, 15, 20, 20, 15, 10, 0,
-            0, 10, 15, 20, 20, 15, 10, 0,
-            -10, 5, 10, 15, 15, 10, 5, -10,
-            -10, 0, 5, 10, 10, 5, 0, -10,
-            -20, -10, -10, 0, 0, -10, -10, -20
+            -20, -10, -10, -5, -5, -10, -10, -20,
+            -10, 0, 0, 0, 0, 0, 0, -10,
+            -10, 0, 5, 5, 5, 5, 0, -10,
+            -5, 0, 5, 5, 5, 5, 0, -5,
+            -5, 0, 5, 5, 5, 5, 0, -5,
+            -10, 0, 5, 5, 5, 5, 0, -10,
+            -10, 0, 0, 0, 0, 0, 0, -10,
+            -20, -10, -10, -5, -5, -10, -10, -20
         ],
-        q: [
-            20, 10, 10, 0, 0, 10, 10, 20,
-            10, 0, -5, -10, -10, -5, 0, 10,
-            10, -5, -10, -15, -15, -10, -5, 10,
-            0, -10, -15, -20, -20, -15, -10, 0,
-            0, -10, -15, -20, -20, -15, -10, 0,
-            10, -5, -10, -15, -15, -10, -5, 10,
-            10, 0, -5, -10, -10, -5, 0, 10,
-            20, 10, 10, 0, 0, 10, 10, 20
-        ],
+    
+        // King Position Table (Middlegame)
         K: [
-            -30, -40, -50, -60, -60, -50, -40, -30,
-            -40, -50, -60, -70, -70, -60, -50, -40,
-            -50, -60, -70, -80, -80, -70, -60, -50,
-            -60, -70, -80, -90, -90, -80, -70, -60,
-            -60, -70, -80, -90, -90, -80, -70, -60,
-            -50, -60, -70, -80, -80, -70, -60, -50,
-            -40, -50, -60, -70, -70, -60, -50, -40,
-            -30, -40, -50, -60, -60, -50, -40, -30
+            -30, -40, -40, -50, -50, -40, -40, -30,
+            -30, -40, -40, -50, -50, -40, -40, -30,
+            -30, -40, -40, -50, -50, -40, -40, -30,
+            -30, -40, -40, -50, -50, -40, -40, -30,
+            -20, -30, -30, -40, -40, -30, -30, -20,
+            -10, -20, -20, -20, -20, -20, -20, -10,
+            20, 20, 0, 0, 0, 0, 20, 20,
+            20, 30, 10, 0, 0, 10, 30, 20
         ],
-        k: [
-            30, 40, 50, 60, 60, 50, 40, 30,
-            40, 50, 60, 70, 70, 60, 50, 40,
-            50, 60, 70, 80, 80, 70, 60, 50,
-            60, 70, 80, 90, 90, 80, 70, 60,
-            60, 70, 80, 90, 90, 80, 70, 60,
-            50, 60, 70, 80, 80, 70, 60, 50,
-            40, 50, 60, 70, 70, 60, 50, 40,
-            30, 40, 50, 60, 60, 50, 40, 30
+    
+        // King Position Table (Endgame)
+        KE: [
+            -50, -40, -30, -20, -20, -30, -40, -50,
+            -30, -20, -10, 0, 0, -10, -20, -30,
+            -20, -10, 10, 20, 20, 10, -10, -20,
+            -10, 0, 20, 30, 30, 20, 0, -10,
+            -10, 0, 20, 30, 30, 20, 0, -10,
+            -20, -10, 10, 20, 20, 10, -10, -20,
+            -30, -20, -10, 0, 0, -10, -20, -30,
+            -50, -40, -30, -20, -20, -30, -40, -50
         ]
     };
+    
+    // Mirror piece table for black perspective
+    const mirrorTable = (table) => {
+        const mirrored = [];
+        for (let row = 0; row < 8; row++) {
+            mirrored.push(...table.slice(row * 8, (row + 1) * 8).reverse());
+        }
+        return mirrored.reverse();
+    };
+    
+    const blackPieceSquareTables = {};
+
+    for (const [key, table] of Object.entries(pieceSquareTables)) {
+        blackPieceSquareTables[key] = mirrorTable(table);
+    }
+    
 
     let value = 0;
 
     for (let i = 0; i < board.length; i++) {
         const piece = board[i];
         if (piece !== "") {
-            const pieceColor = getPieceColor(piece);
-            //const pieceType = piece.toUpperCase();
-            console.log(piece, pieceValues[piece]);
+
+            let pieceColor = getPieceColor(piece);;
+
+            const pieceType = piece.toUpperCase();
+
             const pieceValue = pieceValues[piece];
 
-            value += pieceValue;
+            let positionValue = 0;
 
-            const positionValue = pieceSquareTables[piece][i];
-            value += positionValue;
+            if (pieceColor == WHITE) {
+                positionValue = pieceSquareTables[pieceType][i];
+            }else{
+                positionValue = blackPieceSquareTables[pieceType][i];
+            }
 
+            value += (positionValue +  pieceValue) * (pieceColor == WHITE ? 1 : -1);
+            
         }
     }
 
