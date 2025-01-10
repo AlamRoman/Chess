@@ -1596,22 +1596,16 @@ function minimax(b, isMaximizingPlayer, depth) {
 function evaluateBoard(board) {
 
     const pieceValues = {
-        P: 1, 
-        N: 3,  
-        B: 3, 
-        R: 5, 
-        Q: 9,  
-        K: 0, 
-        p: 1,  
-        n: 3,   
-        b: 3,  
-        r: 5,  
-        q: 9,  
-        k: 0   
+        P: 100, 
+        N: 300,  
+        B: 350, 
+        R: 500, 
+        Q: 900,  
+        K: 20000   
     };
 
     const pieceSquareTables = {
-        // Pawn Position Table (white and black are mirrored)
+        // Pawn Position Table
         P: [
             0, 5, 5, 0, 0, 5, 5, 0,
             0, 10, 10, 5, 5, 10, 10, 0,
@@ -1671,7 +1665,7 @@ function evaluateBoard(board) {
             -20, -10, -10, -5, -5, -10, -10, -20
         ],
     
-        // King Position Table (Middlegame)
+        // King Position Table
         K: [
             -30, -40, -40, -50, -50, -40, -40, -30,
             -30, -40, -40, -50, -50, -40, -40, -30,
@@ -1719,10 +1713,9 @@ function evaluateBoard(board) {
         if (piece !== "") {
 
             let pieceColor = getPieceColor(piece);;
-
             const pieceType = piece.toUpperCase();
 
-            const pieceValue = pieceValues[piece];
+            const pieceValue = pieceValues[pieceType];
 
             let positionValue = 0;
 
