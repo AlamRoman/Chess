@@ -5,28 +5,6 @@ const WHITE = "w";
 const BLACK = "b";
 const PIECES_IMG_FOLDER_PATH = "resources/pieces/";
 
-class GameBoard{
-
-    constructor(board){
-        this.board = board;
-
-        this.castling_rights = {
-            white_queen_side: true,
-            white_king_side: true,
-            black_queen_side: true,
-            black_king_side: true,
-        }
-    }
-
-    init_board(){
-        this.board = Array(FILE * RANK).fill("");
-    }
-}
-
-gb = new GameBoard(null);
-
-gb.init_board();
-
 const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 
 //king check test
@@ -77,7 +55,7 @@ class Move {
         this.captured_piece = captured_piece;
         this.promoted_pawn = null;
 
-        this.castling_rights_before = { ...gb.castling_rights };
+        this.castling_rights_before = deepCopy(gb.castling_rights);
     }
 
     getEnPassant_piece_position(){
@@ -108,7 +86,29 @@ const GAME_STATES = Object.freeze({
     DRAW_BY_STALEMATE: 3
 });
 
-let current_game_state = GAME_STATES.PLAYING;
+class GameBoard{
+
+    constructor(board){
+        this.board = board;
+
+        this.castling_rights = {
+            white_queen_side: true,
+            white_king_side: true,
+            black_queen_side: true,
+            black_king_side: true,
+        }
+
+        this.current_game_state = GAME_STATES.PLAYING;
+    }
+
+    init_board(){
+        this.board = Array(FILE * RANK).fill("");
+    }
+}
+
+gb = new GameBoard(null);
+
+gb.init_board();
 
 function addListenerToSquares() {
     const DOM_squares = Array.from(document.getElementsByClassName("square"));
@@ -212,7 +212,7 @@ function getPieceColor(piece) {
 function squareClicked(event) {
 
     //game ended
-    if (current_game_state != GAME_STATES.PLAYING) {
+    if (gb.current_game_state != GAME_STATES.PLAYING) {
         return;
     }
 
@@ -427,7 +427,7 @@ function isEnemyPiece(piece, your_color) {
 
 function makeMove(move) {
 
-    movePiece(move, gb.board);
+    movePiece(move, gb);
 
     //console.log(evaluateBoard(gb.board));
 
@@ -438,11 +438,11 @@ function makeMove(move) {
         turn_of = WHITE;
     }
 
-    isEndGame(gb.board);
+    isEndGame(gb);
 
     update_board_view(gb.board);
 
-    if (current_game_state != GAME_STATES.PLAYING) {
+    if (gb.current_game_state != GAME_STATES.PLAYING) {
 
         setTimeout(function(){
             showEndGameScreen();
@@ -454,7 +454,7 @@ function makeMove(move) {
     //computer move
     let cMove = computerMove();
 
-    movePiece(cMove, gb.board);
+    movePiece(cMove, gb);
 
     //console.log(evaluateBoard(gb.board));
 
@@ -465,13 +465,13 @@ function makeMove(move) {
         turn_of = WHITE;
     }
 
-    isEndGame(gb.board);
+    isEndGame(gb);
 
     //computer move
 
     update_board_view(gb.board);
 
-    if (current_game_state != GAME_STATES.PLAYING) {
+    if (gb.current_game_state != GAME_STATES.PLAYING) {
         setTimeout(function(){
             showEndGameScreen();
         }, 500);
@@ -481,7 +481,9 @@ function makeMove(move) {
 
 }
 
-function movePiece(move, board) {
+function movePiece(move, game_board) {
+
+    let board = game_board.board;
     
     let from = move.from;
     let to = move.to;
@@ -502,7 +504,7 @@ function movePiece(move, board) {
     board[to] = piece_to_move;
 
     //check and update castling right
-    check_and_update_castling_rights(piece_to_move, from, board);
+    check_and_update_castling_rights(piece_to_move, from, game_board);
 
     //remove enpassant pawn
     if (move.enPassant_piece_position != null) {
@@ -521,7 +523,10 @@ function movePiece(move, board) {
         
 }
 
-function undoMove(move, board){
+function undoMove(move, game_board){
+
+    let board = game_board.board;
+
     let from = move.from;
     let to = move.to;
 
@@ -546,16 +551,21 @@ function undoMove(move, board){
 
 function showEndGameScreen(){
 
-    if (current_game_state == GAME_STATES.WHITE_WON) {
+    if (gb.current_game_state == GAME_STATES.WHITE_WON) {
         alert("White won by checkmate");
-    }else if(current_game_state == GAME_STATES.BLACK_WON){
+    }else if(gb.current_game_state == GAME_STATES.BLACK_WON){
         alert("Black won by checkmate");
-    }else if(current_game_state == GAME_STATES.DRAW_BY_STALEMATE){
+    }else if(gb.current_game_state == GAME_STATES.DRAW_BY_STALEMATE){
         alert("Draw by stalemate");
     }
 }
 
-function isEndGame(board) {
+function isEndGame(game_board) {
+
+    let board = game_board.board;
+
+    
+    console.log("sdfsd",game_board,board);
 
     //TODO: other endgames
 
@@ -565,13 +575,13 @@ function isEndGame(board) {
     if (isKingInCheck(WHITE, board)) {
         if (white_total_valid_moves == 0) {
 
-            current_game_state = GAME_STATES.BLACK_WON;
+            game_board.current_game_state = GAME_STATES.BLACK_WON;
             return true;
         }
     }else{
         if (turn_of==WHITE && white_total_valid_moves == 0) {
 
-            current_game_state = GAME_STATES.DRAW_BY_STALEMATE;
+            game_board.current_game_state = GAME_STATES.DRAW_BY_STALEMATE;
             return true;
         }
     }
@@ -579,19 +589,20 @@ function isEndGame(board) {
     if (isKingInCheck(BLACK, board)) {
         if (black_total_valid_moves == 0) {
             
-            current_game_state = GAME_STATES.WHITE_WON;
+            game_board.current_game_state = GAME_STATES.WHITE_WON;
             return true;
         }
     }else{
         if (turn_of==BLACK && black_total_valid_moves == 0) {
 
-            current_game_state = GAME_STATES.DRAW_BY_STALEMATE;
+            game_board.current_game_state = GAME_STATES.DRAW_BY_STALEMATE;
             return true;
         }
     }
 }
 
 function countTotalValidMovesFor(color, board){
+
     let totalMoves = 0;
 
     for (let i = 0; i < board.length; i++) {
@@ -649,43 +660,45 @@ function computerMove() {
     return moves[Math.floor(Math.random() * moves.length)];
     */
 
-    const { move, value } = minimax([...gb.board], false, 2);
+    const { move, value } = minimax(deepCopy(gb), false, 2);
 
     console.log("computer : ",move);
 
     return move;
 }
 
-function check_and_update_castling_rights(piece_to_move, from, board){
+function check_and_update_castling_rights(piece_to_move, from, game_board){
 
-    if(piece_to_move == "K" && gb.castling_rights.white_king_side && gb.castling_rights.white_queen_side){//white king moved
+    let board = game_board.board;
 
-        gb.castling_rights.white_king_side = false;
-        gb.castling_rights.white_queen_side = false;
+    if(piece_to_move == "K" && game_board.castling_rights.white_king_side && game_board.castling_rights.white_queen_side){//white king moved
 
-    }else if(piece_to_move == "k" && gb.castling_rights.black_king_side && gb.castling_rights.black_queen_side ){//black king moved
+        game_board.castling_rights.white_king_side = false;
+        game_board.castling_rights.white_queen_side = false;
 
-        gb.castling_rights.black_king_side = false;
-        gb.castling_rights.black_queen_side = false;
+    }else if(piece_to_move == "k" && game_board.castling_rights.black_king_side && game_board.castling_rights.black_queen_side ){//black king moved
+
+        game_board.castling_rights.black_king_side = false;
+        game_board.castling_rights.black_queen_side = false;
         
     }
     
-    if (gb.castling_rights.white_queen_side && board[56] != "R") {//white queen side rook moved
+    if (game_board.castling_rights.white_queen_side && board[56] != "R") {//white queen side rook moved
 
-        gb.castling_rights.white_queen_side = false;
+        game_board.castling_rights.white_queen_side = false;
 
-    }else if(gb.castling_rights.white_king_side && board[63] != "R"){//white king side rook moved
+    }else if(game_board.castling_rights.white_king_side && board[63] != "R"){//white king side rook moved
 
-        gb.castling_rights.white_king_side = false;
+        game_board.castling_rights.white_king_side = false;
     }
     
-    if (gb.castling_rights.black_queen_side && board[0] != "r") {//black queen side rook moved
+    if (game_board.castling_rights.black_queen_side && board[0] != "r") {//black queen side rook moved
 
-        gb.castling_rights.black_queen_side = false;
+        game_board.castling_rights.black_queen_side = false;
 
-    }else if(gb.castling_rights.black_king_side && board[7] != "r"){//black king side rook moved
+    }else if(game_board.castling_rights.black_king_side && board[7] != "r"){//black king side rook moved
 
-        gb.castling_rights.black_king_side = false;
+        game_board.castling_rights.black_king_side = false;
     }
 }
 
@@ -1541,7 +1554,7 @@ function perft(depth, turn_color, board) {
     for (let i = 0; i < moves.length; i++) {
         let temp = [...board];
 
-        movePiece(moves[i], board);
+        movePiece(moves[i], gb);
 
         nodes += perft(depth-1, turn_color, board);
 
@@ -1551,9 +1564,27 @@ function perft(depth, turn_color, board) {
     return nodes;
 }
 
-function minimax(b, isMaximizingPlayer, depth) {
+function deepCopy(obj) {
+    if (obj === null || typeof obj !== 'object') {
+    return obj;
+    }
 
-    if (depth <= 0 || isEndGame(b)) {
+    if (Array.isArray(obj)) {
+    return obj.map(deepCopy);
+    }
+
+    const copy = {};
+    for (const key in obj) {
+    copy[key] = deepCopy(obj[key]);
+    }
+    return copy;
+}
+
+function minimax(game_board, isMaximizingPlayer, depth) {
+
+    let b = game_board.board;
+
+    if (depth <= 0 || isEndGame(game_board)) {
         return { move: null, value: evaluateBoard(b) };
     }
 
@@ -1572,9 +1603,9 @@ function minimax(b, isMaximizingPlayer, depth) {
     }
 
     for (const move of all_moves) {
-        movePiece(move, b);
-        const { value } = minimax(b, !isMaximizingPlayer, depth - 1);
-        undoMove(move, b);
+        movePiece(move, game_board);
+        const { value } = minimax(deepCopy(game_board), !isMaximizingPlayer, depth - 1);
+        undoMove(move, game_board);
 
         if (isMaximizingPlayer) {
             if (value > bestValue) {
@@ -1598,10 +1629,10 @@ function evaluateBoard(board) {
     const pieceValues = {
         P: 100, 
         N: 300,  
-        B: 350, 
+        B: 300, 
         R: 500, 
         Q: 900,  
-        K: 20000   
+        K: 0 
     };
 
     const pieceSquareTables = {
