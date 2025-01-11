@@ -5,7 +5,7 @@ const WHITE = "w";
 const BLACK = "b";
 const PIECES_IMG_FOLDER_PATH = "resources/pieces/";
 
-const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+//const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 
 //king check test
 //const STARTING_FEN = "7k/2R5/Q7/8/8/8/8/8";
@@ -17,7 +17,7 @@ const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 //const STARTING_FEN = "r3k2r/8/1N6/pppppppp/PPPPPPPP/8/8/R3K2R";
 
 //pawn promotion test
-//const STARTING_FEN = "1n1b4/2P5/8/8/8/8/3p4/2N1B3";
+const STARTING_FEN = "1n1b4/7P/8/8/R7/8/3p4/2N1B3";
 
 //perft test
 //const STARTING_FEN = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R";
@@ -493,7 +493,7 @@ function movePiece(move, game_board) {
     //if pawn promoted then update it
     if(move.pawn_promoted_to != null){
         piece_to_move = move.pawn_promoted_to;
-        move.promoted_pawn = move.from;
+        move.promoted_pawn = board[from];
     }
 
     if (board[to] != "") {
@@ -535,6 +535,8 @@ function undoMove(move, game_board){
     //unpromote pawn
     if(move.promoted_pawn != null){
         movedPiece = move.promoted_pawn;
+
+
     }
 
     board[to] = "";
@@ -562,10 +564,7 @@ function showEndGameScreen(){
 
 function isEndGame(game_board) {
 
-    let board = game_board.board;
-
-    
-    console.log("sdfsd",game_board,board);
+    let board = deepCopy(game_board.board);
 
     //TODO: other endgames
 
@@ -669,7 +668,7 @@ function computerMove() {
 
 function check_and_update_castling_rights(piece_to_move, from, game_board){
 
-    let board = game_board.board;
+    let board = deepCopy(game_board.board);
 
     if(piece_to_move == "K" && game_board.castling_rights.white_king_side && game_board.castling_rights.white_queen_side){//white king moved
 
@@ -708,8 +707,6 @@ function generate_moves(piece, position, board) {
     const x = position % 8;              // Column
     const pieceColor = isUpperCase(piece) ? "w" : "b";
 
-    let board_copy = Array.from(board);
-
     let moves = new Array();
 
     position = parseInt(position);
@@ -721,10 +718,10 @@ function generate_moves(piece, position, board) {
             let newIndex = row_col_to_position(y-1, x);
 
             if (y==1) {
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "Q",board);
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "R",board);
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "B",board);
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "N",board);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, board, "Q");
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, board, "R");
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, board, "B");
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, board, "N");
             }else{
                 makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
             }
@@ -744,10 +741,10 @@ function generate_moves(piece, position, board) {
 
             if (isEnemyPiece(board[newIndex], "w")) {
                 if (y==1) {
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "Q",board);
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "R",board);
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "B",board);
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "N",board);
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board, "Q");
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board, "R");
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board, "B");
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board, "N");
                 }else{
                     makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
                 }
@@ -760,10 +757,10 @@ function generate_moves(piece, position, board) {
 
             if (isEnemyPiece(board[newIndex], "w")) {
                 if (y==1) {
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "Q",board);
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "R",board);
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "B",board);
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "N",board);
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, board, "Q");
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, board, "R");
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, board, "B");
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, board, "N");
                 }else{
                     makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
                 }
@@ -830,10 +827,10 @@ function generate_moves(piece, position, board) {
             let newIndex = row_col_to_position(y+1, x);
 
             if (y==6) {
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "q",board);
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "r",board);
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "b",board);
-                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "n",board);
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, board, "q");
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, board, "r");
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, board, "b");
+                makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, board, "n");
             }else{
                 makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
             }
@@ -853,10 +850,10 @@ function generate_moves(piece, position, board) {
 
             if (isEnemyPiece(board[newIndex], "b")) {
                 if (y==6) {
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "q",board);
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "r",board);
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "b",board);
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "n",board);
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, board, "q");
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, board, "r");
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, board, "b");
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, board, "n");
                 }else{
                     makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
                 }
@@ -869,10 +866,10 @@ function generate_moves(piece, position, board) {
 
             if (isEnemyPiece(board[newIndex], "b")) {
                 if (y==6) {
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "q",board);
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "r",board);
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "b",board);
-                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, "n",board);
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, board, "q");
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, board, "r");
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, board, "b");
+                    makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves, board, "n");
                 }else{
                     makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,board);
                 }
@@ -1566,23 +1563,23 @@ function perft(depth, turn_color, board) {
 
 function deepCopy(obj) {
     if (obj === null || typeof obj !== 'object') {
-    return obj;
+        return obj;
     }
 
     if (Array.isArray(obj)) {
-    return obj.map(deepCopy);
+        return obj.map(deepCopy);
     }
 
     const copy = {};
     for (const key in obj) {
-    copy[key] = deepCopy(obj[key]);
+        copy[key] = deepCopy(obj[key]);
     }
     return copy;
 }
 
 function minimax(game_board, isMaximizingPlayer, depth) {
 
-    let b = game_board.board;
+    let b = deepCopy(game_board.board);
 
     if (depth <= 0 || isEndGame(game_board)) {
         return { move: null, value: evaluateBoard(b) };
@@ -1604,7 +1601,7 @@ function minimax(game_board, isMaximizingPlayer, depth) {
 
     for (const move of all_moves) {
         movePiece(move, game_board);
-        const { value } = minimax(deepCopy(game_board), !isMaximizingPlayer, depth - 1);
+        const { value } = minimax(game_board, !isMaximizingPlayer, depth - 1);
         undoMove(move, game_board);
 
         if (isMaximizingPlayer) {
@@ -1735,7 +1732,6 @@ function evaluateBoard(board) {
     for (const [key, table] of Object.entries(pieceSquareTables)) {
         blackPieceSquareTables[key] = mirrorTable(table);
     }
-    
 
     let value = 0;
 
@@ -1743,7 +1739,13 @@ function evaluateBoard(board) {
         const piece = board[i];
         if (piece !== "") {
 
-            let pieceColor = getPieceColor(piece);;
+            let pieceColor;
+
+            try {
+                pieceColor = getPieceColor(piece)
+            } catch (error) {
+                console.log("pro ",board);
+            }
             const pieceType = piece.toUpperCase();
 
             const pieceValue = pieceValues[pieceType];
