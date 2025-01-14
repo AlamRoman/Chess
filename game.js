@@ -5,19 +5,19 @@ const WHITE = "w";
 const BLACK = "b";
 const PIECES_IMG_FOLDER_PATH = "resources/pieces/";
 
-//const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 
 //king check test
-//const STARTING_FEN = "7k/2R5/Q7/8/8/8/8/8";
+//const STARTING_FEN = "7K/2r5/q7/8/8/8/k7/8";
 
 //enpassant test
-//const STARTING_FEN = "8/2p5/8/8/3P4/8/8/8";
+//const STARTING_FEN = "8/3p4/8/8/4P3/8/8/8";
 
 //castling test
 //const STARTING_FEN = "r3k2r/8/1N6/pppppppp/PPPPPPPP/8/8/R3K2R";
 
 //pawn promotion test
-const STARTING_FEN = "1n1b4/7P/8/8/R7/8/3p4/2N1B3";
+//const STARTING_FEN = "1n1b4/7P/8/8/R7/8/3p4/2N1B3";
 
 //perft test
 //const STARTING_FEN = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R";
@@ -150,11 +150,19 @@ function load_img_in_array(pieces_name_to_img_name) {
 //update the DOM board from board array
 function update_board_view(board) {
 
+    //for debug
+    let show_square_index = false;
+
     for (let i = 0; i < 64; i++) {
 
         let square = document.getElementById("sq"+ i);
 
-        square.innerHTML = "";
+        if (show_square_index) {
+            square.innerHTML = i;
+        }else{
+            square.innerHTML = "";
+        }
+        
 
         if(board[i] !== ""){
 
@@ -478,6 +486,7 @@ function makeMove(move) {
     }
 
     console.log(gb.board);
+    console.log("evaluarion : ",evaluateBoard(gb.board));
 
 }
 
@@ -563,42 +572,34 @@ function showEndGameScreen(){
 }
 
 function isEndGame(game_board) {
-
     let board = deepCopy(game_board.board);
 
-    //TODO: other endgames
+    // check if a player's king is in checkmate or stalemate
+    function checkEndCondition(player, opponent) {
+        let totalValidMoves = countTotalValidMovesFor(player, board);
+        let isInCheck = isKingInCheck(player, board);
 
-    let white_total_valid_moves = countTotalValidMovesFor(WHITE, board);
-    let black_total_valid_moves = countTotalValidMovesFor(BLACK, board);
-
-    if (isKingInCheck(WHITE, board)) {
-        if (white_total_valid_moves == 0) {
-
-            game_board.current_game_state = GAME_STATES.BLACK_WON;
+        if (isInCheck && totalValidMoves === 0) {
+            game_board.current_game_state = player === WHITE ? GAME_STATES.BLACK_WON : GAME_STATES.WHITE_WON;
             return true;
         }
-    }else{
-        if (turn_of==WHITE && white_total_valid_moves == 0) {
 
+        if (!isInCheck && totalValidMoves === 0) {
             game_board.current_game_state = GAME_STATES.DRAW_BY_STALEMATE;
             return true;
         }
-    }
-    
-    if (isKingInCheck(BLACK, board)) {
-        if (black_total_valid_moves == 0) {
-            
-            game_board.current_game_state = GAME_STATES.WHITE_WON;
-            return true;
-        }
-    }else{
-        if (turn_of==BLACK && black_total_valid_moves == 0) {
 
-            game_board.current_game_state = GAME_STATES.DRAW_BY_STALEMATE;
-            return true;
-        }
+        return false;
     }
+
+    // Check endgame conditions for both players
+    if (checkEndCondition(WHITE, BLACK) || checkEndCondition(BLACK, WHITE)) {
+        return true;
+    }
+
+    return false;
 }
+
 
 function countTotalValidMovesFor(color, board){
 
@@ -659,7 +660,7 @@ function computerMove() {
     return moves[Math.floor(Math.random() * moves.length)];
     */
 
-    const { move, value } = minimax(deepCopy(gb), false, 2);
+    const { move, value } = minimax(deepCopy(gb), false, 3);
 
     console.log("computer : ",move);
 
@@ -1581,13 +1582,29 @@ function minimax(game_board, isMaximizingPlayer, depth) {
 
     let b = deepCopy(game_board.board);
 
-    if (depth <= 0 || isEndGame(game_board)) {
+    if (isEndGame(game_board) || depth <= 0) {
+
+        if (game_board.current_game_state == GAME_STATES.WHITE_WON) {
+            //console.log("winning evaluarion : ",evaluateBoard(b));
+            //console.log("white");
+            return { move: null, value: 1000000 };
+        }else if(game_board.current_game_state == GAME_STATES.BLACK_WON){
+            console.log("black");
+            return { move: null, value: -1000000 };
+        }else if(game_board.current_game_state == GAME_STATES.DRAW_BY_STALEMATE){
+            //console.log("draw");
+            return { move: null, value: 0 };
+        }
+
         return { move: null, value: evaluateBoard(b) };
     }
 
     let bestMove = null;
     let bestValue = isMaximizingPlayer ? -Infinity : Infinity;
 
+    if (depth  == 1) {
+        //console.log("Best Value ini:", bestValue);
+    }
 
     let all_moves = [];
     for (let i = 0; i < b.length; i++) {
@@ -1601,8 +1618,15 @@ function minimax(game_board, isMaximizingPlayer, depth) {
 
     for (const move of all_moves) {
         movePiece(move, game_board);
-        const { value } = minimax(game_board, !isMaximizingPlayer, depth - 1);
+        let { value } = minimax(game_board, !isMaximizingPlayer, depth - 1);
         undoMove(move, game_board);
+
+        if (depth == 2) {
+            console.log(value, move);
+        }
+
+        //better value for low depth
+        value = value + (isMaximizingPlayer ? depth : -depth) * 10;
 
         if (isMaximizingPlayer) {
             if (value > bestValue) {
@@ -1617,6 +1641,29 @@ function minimax(game_board, isMaximizingPlayer, depth) {
         }
     }
 
+    if (all_moves.length <= 0) {
+
+        if (isEndGame(game_board)) {
+
+            if (game_board.current_game_state == GAME_STATES.WHITE_WON) {
+                //console.log("white");
+                return { move: null, value: 1000000 };
+            }else if(game_board.current_game_state == GAME_STATES.BLACK_WON){
+                return { move: null, value: -1000000 };
+            }else if(game_board.current_game_state == GAME_STATES.DRAW_BY_STALEMATE){
+                //console.log("draw");
+                return { move: null, value: 0 };
+            }
+    
+            return { move: null, value: evaluateBoard(b) };
+        }
+    }
+
+    if(depth == 2){
+        console.log("Best Move:", bestMove);
+        console.log("Best Value:", bestValue, isMaximizingPlayer);
+    }
+
     return { move: bestMove, value: bestValue };
 }
 
@@ -1629,7 +1676,7 @@ function evaluateBoard(board) {
         B: 300, 
         R: 500, 
         Q: 900,  
-        K: 0 
+        K: 20000 
     };
 
     const pieceSquareTables = {
@@ -1748,17 +1795,18 @@ function evaluateBoard(board) {
             }
             const pieceType = piece.toUpperCase();
 
-            const pieceValue = pieceValues[pieceType];
+            let pieceValue = pieceValues[pieceType];
 
             let positionValue = 0;
 
             if (pieceColor == WHITE) {
                 positionValue = pieceSquareTables[pieceType][i];
             }else{
-                positionValue = blackPieceSquareTables[pieceType][i];
+                pieceValue *= -1;
+                positionValue = -blackPieceSquareTables[pieceType][i];
             }
 
-            value += (positionValue +  pieceValue) * (pieceColor == WHITE ? 1 : -1);
+            value += positionValue +  pieceValue;
             
         }
     }
