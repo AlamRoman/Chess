@@ -660,7 +660,7 @@ function computerMove() {
     return moves[Math.floor(Math.random() * moves.length)];
     */
 
-    const { move, value } = minimax(deepCopy(gb), false, 3);
+    const { move, value } = minimax(deepCopy(gb), false, 3, -Infinity, Infinity);
 
     console.log("computer : ",move);
 
@@ -1578,7 +1578,7 @@ function deepCopy(obj) {
     return copy;
 }
 
-function minimax(game_board, isMaximizingPlayer, depth) {
+function minimax(game_board, isMaximizingPlayer, depth, alfa, beta) {
 
     let b = deepCopy(game_board.board);
 
@@ -1589,7 +1589,7 @@ function minimax(game_board, isMaximizingPlayer, depth) {
             //console.log("white");
             return { move: null, value: 1000000 };
         }else if(game_board.current_game_state == GAME_STATES.BLACK_WON){
-            console.log("black");
+            //console.log("black");
             return { move: null, value: -1000000 };
         }else if(game_board.current_game_state == GAME_STATES.DRAW_BY_STALEMATE){
             //console.log("draw");
@@ -1601,10 +1601,6 @@ function minimax(game_board, isMaximizingPlayer, depth) {
 
     let bestMove = null;
     let bestValue = isMaximizingPlayer ? -Infinity : Infinity;
-
-    if (depth  == 1) {
-        //console.log("Best Value ini:", bestValue);
-    }
 
     let all_moves = [];
     for (let i = 0; i < b.length; i++) {
@@ -1618,26 +1614,31 @@ function minimax(game_board, isMaximizingPlayer, depth) {
 
     for (const move of all_moves) {
         movePiece(move, game_board);
-        let { value } = minimax(game_board, !isMaximizingPlayer, depth - 1);
+        let { value } = minimax(game_board, !isMaximizingPlayer, depth - 1, alfa, beta);
         undoMove(move, game_board);
 
-        if (depth == 2) {
-            console.log(value, move);
-        }
-
         //better value for low depth
-        value = value + (isMaximizingPlayer ? depth : -depth) * 10;
+        value = value + (isMaximizingPlayer ? depth : -depth) * 5;
 
         if (isMaximizingPlayer) {
             if (value > bestValue) {
                 bestValue = value;
                 bestMove = move;
             }
+
+            alfa = Math.max(alfa, value);
+
         } else {
             if (value < bestValue) {
                 bestValue = value;
                 bestMove = move;
             }
+
+            beta = Math.min(beta, value);
+        }
+
+        if (beta <= alfa) {
+            break;
         }
     }
 
@@ -1657,11 +1658,6 @@ function minimax(game_board, isMaximizingPlayer, depth) {
     
             return { move: null, value: evaluateBoard(b) };
         }
-    }
-
-    if(depth == 2){
-        console.log("Best Move:", bestMove);
-        console.log("Best Value:", bestValue, isMaximizingPlayer);
     }
 
     return { move: bestMove, value: bestValue };
