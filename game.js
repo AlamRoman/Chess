@@ -517,7 +517,7 @@ function movePiece(move, game_board) {
 
     //remove enpassant pawn
     if (move.enPassant_piece_position != null) {
-
+        move.captured_piece = board[move.enPassant_piece_position];
         board[move.enPassant_piece_position] = "";
         move.SetEnPassant_piece_position(null);
     }
@@ -544,8 +544,6 @@ function undoMove(move, game_board){
     //unpromote pawn
     if(move.promoted_pawn != null){
         movedPiece = move.promoted_pawn;
-
-
     }
 
     board[to] = "";
@@ -553,7 +551,20 @@ function undoMove(move, game_board){
 
     //uncapture piece
     if (move.captured_piece !== null) {
-        board[to] = move.captured_piece;
+
+        if(move.enPassant_piece_position != null){//enpassatnt capture
+
+            board[move.enPassant_piece_position] = move.capturedPiece;
+
+        }else{//normal capture
+
+            board[to] = move.captured_piece;
+        }
+    }
+
+    if (move.castlingRookToMove != null) {
+        board[move.castlingRookToMove.from] = board[move.castlingRookToMove.to];
+        board[move.castlingRookToMove.to] = "";
     }
 
     //restore previous castling rights
@@ -599,7 +610,6 @@ function isEndGame(game_board) {
 
     return false;
 }
-
 
 function countTotalValidMovesFor(color, board){
 
@@ -1672,7 +1682,7 @@ function evaluateBoard(board) {
         B: 300, 
         R: 500, 
         Q: 900,  
-        K: 20000 
+        K: 0
     };
 
     const pieceSquareTables = {
