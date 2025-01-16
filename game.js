@@ -441,7 +441,11 @@ function isEnemyPiece(piece, your_color) {
 
 async function makeMove(move) {
 
+    remove_highlight_previous_move();
+
     movePiece(move, gb);
+
+    highlight_previous_move();
 
     //console.log(evaluateBoard(gb.board));
 
@@ -468,7 +472,11 @@ async function makeMove(move) {
     //computer move
     let cMove = computerMove();
 
+    remove_highlight_previous_move();
+
     movePiece(cMove, gb);
+
+    highlight_previous_move();
 
     //console.log(evaluateBoard(gb.board));
 
@@ -1562,6 +1570,29 @@ function show_valid_moves_in_html(moves) {
     });
 }
 
+function highlight_previous_move(){
+    if (previous_move != null) {
+        let from = previous_move.from;
+        let to = previous_move.to;
+
+        var from_sq = document.getElementById("sq"+from);
+        var to_sq = document.getElementById("sq"+to);
+
+        from_sq.classList.add("previous_move_highlight");
+        to_sq.classList.add("previous_move_highlight");
+    }
+}
+
+function remove_highlight_previous_move(){
+    let squares = document.getElementsByClassName("previous_move_highlight");
+
+    let squaresArray = Array.from(squares);
+
+    for (let square of squaresArray) {
+        square.classList.remove("previous_move_highlight");
+    }
+}
+
 function hide_shown_valid_moves_in_html() {
 
     for (let i = 0; i < valid_squares_shown.length; i++) {
@@ -1678,9 +1709,11 @@ function minimax(game_board, isMaximizingPlayer, depth, alfa, beta) {
         //better value for low depth
         //value = value + (isMaximizingPlayer ? depth : -depth) * 10;
 
+        /*
         if (depth == 3) {
             console.log(value, move);
         }
+            */
 
         if (isMaximizingPlayer) {
             if (value > bestValue) {
