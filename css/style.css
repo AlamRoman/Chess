@@ -43,6 +43,10 @@ table, td{
     background-color: #ffcc3f;
 }
 
+.previous_move_highlight{
+    background-color: #eace1592;
+}
+
 .piece-img{
     margin: 0px;
     vertical-align: middle;
