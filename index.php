@@ -9,8 +9,18 @@
 </head>
 <body>
 
-    <div class="board_container">
-        <?php include "include/generate_board.php"; ?>
+    <div class="container">
+        <div class="board_container">
+            <?php include "include/generate_board.php"; ?>
+        </div>
+
+        <div id="captured_piece_container">
+            <div id="black_captured_pieces">
+            </div>
+            <hr/>
+            <div id="white_captured_pieces">
+            </div>
+        </div>
     </div>
 
     <script src="game.js"></script>
