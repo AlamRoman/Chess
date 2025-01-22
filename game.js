@@ -5,7 +5,7 @@ const WHITE = "w";
 const BLACK = "b";
 const PIECES_IMG_FOLDER_PATH = "resources/pieces/";
 
-//const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 
 //king check test
 //const STARTING_FEN = "7K/2r5/q7/8/8/8/k7/8";
@@ -23,7 +23,7 @@ const PIECES_IMG_FOLDER_PATH = "resources/pieces/";
 //const STARTING_FEN = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R";
 
 //endgame test
-const STARTING_FEN = "8/7r/1k6/3p4/3P1B2/42K1/8/8";
+//const STARTING_FEN = "8/7r/1k6/3p4/3P1B2/42K1/8/8";
 
 let player_color = WHITE;
 let computer_color = BLACK;
