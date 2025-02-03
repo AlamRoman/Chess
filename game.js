@@ -47,8 +47,12 @@ let previous_move = null;
 
 let pawn_promotion_square=null;
 
+let nodesVisited = 0;
+
+const killerMoves = [];
+
 class Move {
-    constructor(from, to, enPassant_piece_position=null, castlingRookToMove=null, pawn_promoted_to=null, captured_piece=null){
+    constructor(from, to, enPassant_piece_position=null, castlingRookToMove=null, pawn_promoted_to=null, captured_piece=null, moving_piece){
         this.from = from;
         this.to = to;
 
@@ -56,7 +60,8 @@ class Move {
         this.castlingRookToMove = castlingRookToMove;
         this.pawn_promoted_to = pawn_promoted_to;
         this.captured_piece = captured_piece;
-        this.promoted_pawn = null;
+
+        this.moving_piece = moving_piece;
 
         this.castling_rights_before = deepCopy(gb.castling_rights);
     }
@@ -187,6 +192,15 @@ class GameBoard{
 gb = new GameBoard(null);
 
 gb.init_board();
+
+const pieceValues = {
+    P: 100, 
+    N: 300,  
+    B: 300, 
+    R: 500, 
+    Q: 900,  
+    K: 0 
+};
 
 const pieceValuesMiddleGame = {
     P: 82, 
@@ -760,7 +774,7 @@ function movePiece(move, game_board) {
     //if pawn promoted then update it
     if(move.pawn_promoted_to != null){
         piece_to_move = move.pawn_promoted_to;
-        move.promoted_pawn = board[from];
+        //move.promoted_pawn = board[from];
     }
 
     //capture
@@ -812,8 +826,8 @@ function undoMove(move, game_board){
     }
 
     //unpromote pawn
-    if(move.promoted_pawn != null){
-        movedPiece = move.promoted_pawn;
+    if(move.pawn_promoted_to != null){
+        movedPiece = move.moving_piece;
     }
 
     board[to] = "";
@@ -845,7 +859,7 @@ function update_game_board_piece_count(move) {
     }
 
     if(move.pawn_promoted_to != null){
-        gb.decrease_piece_count_of(move.promoted_pawn);
+        gb.decrease_piece_count_of(move.moving_piece);
         gb.increase_piece_count_of(move.pawn_promoted_to);
     }
 
@@ -983,7 +997,7 @@ function computerMove() {
 
     const { move, value } = minimax(deepCopy(gb), false, 3, -Infinity, Infinity);
 
-    console.log("computer : ",move);
+    console.log("computer : ",move, " nodes : ", nodesVisited);
 
     return move;
 }
@@ -1723,6 +1737,7 @@ function makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,
 
     //make the move
     let captured_piece = board_copy[newIndex];
+    let moving_piece = board_copy[position];
     board_copy[newIndex] = piece;
     board_copy[position] = "";
 
@@ -1730,11 +1745,11 @@ function makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,
         if (onlyCaptureMoves) {
 
             if(captured_piece != ""){
-                moves.push(new Move(position, newIndex, null, null, pawn_promoted_to, captured_piece));//add to legal moves
+                moves.push(new Move(position, newIndex, null, null, pawn_promoted_to, captured_piece, moving_piece));//add to legal moves
             }
         }else{
 
-            moves.push(new Move(position, newIndex, null, null, pawn_promoted_to, captured_piece));//add to legal moves
+            moves.push(new Move(position, newIndex, null, null, pawn_promoted_to, null, moving_piece));//add to legal moves
         }
     
         return true;
@@ -1960,7 +1975,6 @@ function deepCopy(obj) {
     return copy;
 }
 
-
 function isEndgame(game_board) {
 
     if (game_board.countTotalPieces() <= 10) {
@@ -1969,7 +1983,61 @@ function isEndgame(game_board) {
     return false;
 }
 
+function orderMoves(moves, depth) {
+    
+    function guessMoveScore(move) {
+
+        let score = 0;
+
+        //promotion
+        if (move.pawn_promoted_to != null) {
+            score += 1000;
+        }
+
+        //MVV-LVA
+        if(move.captured_piece != null){
+            score += pieceValues[move.captured_piece.toUpperCase()] * 10 - pieceValues[move.moving_piece.toUpperCase()];
+        }
+
+        if (move.castlingRookToMove != null) {
+            score += 30; // Bonus for castling
+        }
+
+        if (isKillerMove(move, depth)) {
+            score += 500; //bonus for killer moves
+        }
+
+        return score;
+    }
+
+    return moves.sort((a, b) => guessMoveScore(b) - guessMoveScore(a));
+}
+
+function addKillerMove(move, depth) {
+    if (!killerMoves[depth]) {
+        killerMoves[depth] = [];
+    }
+
+    // Avoid duplicates
+    if (!killerMoves[depth].some(killer => isSameMove(killer, move))) {
+        if (killerMoves[depth].length >= 2) {
+            killerMoves[depth].shift(); // Remove oldest move if there are already two
+        }
+        killerMoves[depth].push(move);
+    }
+}
+
+function isKillerMove(move, depth) {
+    return killerMoves[depth] && killerMoves[depth].some(killer => isSameMove(killer, move));
+}
+
+function isSameMove(move1, move2) {
+    return move1.from === move2.from && move1.to === move2.to;
+}
+
 function minimax(game_board, isMaximizingPlayer, depth, alfa, beta) {
+
+    nodesVisited++;
 
     let b = deepCopy(game_board.board);
 
@@ -2003,6 +2071,8 @@ function minimax(game_board, isMaximizingPlayer, depth, alfa, beta) {
         }
     }
 
+    all_moves = orderMoves(all_moves, depth);
+
     for (const move of all_moves) {
         movePiece(move, game_board);
         let { value } = minimax(deepCopy(game_board), !isMaximizingPlayer, depth - 1, alfa, beta);
@@ -2035,6 +2105,7 @@ function minimax(game_board, isMaximizingPlayer, depth, alfa, beta) {
         }
 
         if (beta <= alfa) {
+            addKillerMove(move, depth);
             break;
         }
     }
@@ -2060,6 +2131,8 @@ function minimax(game_board, isMaximizingPlayer, depth, alfa, beta) {
 
 function extendSearchForCaputures(game_board, isMaximizingPlayer, alfa, beta, depth) {
 
+    nodesVisited++;
+
     let board = game_board.board;
 
     if (depth <= 0) {
@@ -2083,6 +2156,8 @@ function extendSearchForCaputures(game_board, isMaximizingPlayer, alfa, beta, de
             }
         }
     }
+
+    all_moves = orderMoves(all_moves, depth+3);
 
     //console.log("cap : ", all_moves.length, all_moves);
 
