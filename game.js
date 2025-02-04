@@ -28,8 +28,6 @@ const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 let player_color = WHITE;
 let computer_color = BLACK;
 
-let turn_of = WHITE;
-
 //hashmap with pieces name and their images
 let pieces_img = new Map();
 
@@ -150,6 +148,8 @@ class GameBoard{
             BLACK_QUEEN: "q",
             BLACK_KING: "k"
         });
+
+        this.turn_of = WHITE;
     }
 
     init_board(){
@@ -707,13 +707,6 @@ async function makeMove(move) {
 
     highlight_previous_move();
 
-    //alternate turn
-    if (turn_of == WHITE) {
-        turn_of = BLACK;
-    }else{
-        turn_of = WHITE;
-    }
-
     isGameFinished(gb);
 
     await update_board_view(gb.board);
@@ -737,13 +730,6 @@ async function makeMove(move) {
     update_game_board_piece_count(cMove);
 
     highlight_previous_move();
-
-    //alternate turn
-    if (turn_of == WHITE) {
-        turn_of = BLACK;
-    }else{
-        turn_of = WHITE;
-    }
 
     isGameFinished(gb);
 
@@ -803,10 +789,18 @@ function movePiece(move, game_board) {
 
     previous_move = new Move(from, to);
 
+    if (game_board.turn_of == WHITE) {
+        game_board.turn_of = BLACK;
+    }else{
+        game_board.turn_of = WHITE;
+    }
+
+    /*
     if (board[2]==undefined) {
         console.log(move);
         return;
     }
+        */
         
 }
 
@@ -908,8 +902,7 @@ function showEndGameScreen(){
 function isGameFinished(game_board) {
     let board = deepCopy(game_board.board);
 
-    // check if a player's king is in checkmate or stalemate
-    function checkEndCondition(player, opponent) {
+    function checkEndCondition(player) {
         let totalValidMoves = countTotalValidMovesFor(player, game_board);
         let isInCheck = isKingInCheck(player, board);
 
@@ -926,13 +919,9 @@ function isGameFinished(game_board) {
         return false;
     }
 
-    // Check endgame conditions for both players
-    if (checkEndCondition(WHITE, BLACK) || checkEndCondition(BLACK, WHITE)) {
-        return true;
-    }
-
-    return false;
+    return checkEndCondition(game_board.turn_of);
 }
+
 
 function countTotalValidMovesFor(color, game_board){
 
