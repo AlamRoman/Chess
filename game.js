@@ -5,7 +5,7 @@ const WHITE = "w";
 const BLACK = "b";
 const PIECES_IMG_FOLDER_PATH = "resources/pieces/";
 
-const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+//const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 
 //king check test
 //const STARTING_FEN = "7K/2r5/q7/8/8/8/k7/8";
@@ -24,6 +24,8 @@ const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 
 //endgame test
 //const STARTING_FEN = "8/7r/1k6/3p4/3P1B2/42K1/8/8";
+
+const STARTING_FEN = "8/8/5R2/3Pp3/2P5/3P1Q2/1P5k/1K6";
 
 let player_color = WHITE;
 let computer_color = BLACK;
@@ -983,6 +985,8 @@ function computerMove() {
 
     return moves[Math.floor(Math.random() * moves.length)];
     */
+
+    nodesVisited = 0;
 
     const { move, value } = minimax(deepCopy(gb), false, 3, -Infinity, Infinity);
 
@@ -2064,7 +2068,7 @@ function minimax(game_board, isMaximizingPlayer, depth, alfa, beta) {
 
     for (const move of all_moves) {
         movePiece(move, game_board);
-        let { value } = minimax(deepCopy(game_board), !isMaximizingPlayer, depth - 1, alfa, beta);
+        let { value } = minimax(game_board, !isMaximizingPlayer, depth - 1, alfa, beta);
         undoMove(move, game_board);
 
         //better value for low depth
