@@ -25,7 +25,7 @@ const PIECES_IMG_FOLDER_PATH = "resources/pieces/";
 //endgame test
 //const STARTING_FEN = "8/7r/1k6/3p4/3P1B2/42K1/8/8";
 
-const STARTING_FEN = "8/8/5R2/3Pp3/2P5/3P1Q2/1P5k/1K6";
+const STARTING_FEN = "qr6/8/8/7k/8/4K3/8";
 
 let player_color = WHITE;
 let computer_color = BLACK;
@@ -37,163 +37,6 @@ let pieces_img = new Map();
 let validMoves = [];
 
 let valid_squares_shown = [];
-
-let Previous_selected_square = {
-    dom : null,
-    index: null
-}
-
-let previous_move = null;
-
-let pawn_promotion_square=null;
-
-let nodesVisited = 0;
-
-const killerMoves = [];
-
-class Move {
-    constructor(from, to, enPassant_piece_position=null, castlingRookToMove=null, pawn_promoted_to=null, captured_piece=null, moving_piece){
-        this.from = from;
-        this.to = to;
-
-        this.enPassant_piece_position = enPassant_piece_position;
-        this.castlingRookToMove = castlingRookToMove;
-        this.pawn_promoted_to = pawn_promoted_to;
-        this.captured_piece = captured_piece;
-
-        this.moving_piece = moving_piece;
-
-        this.castling_rights_before = deepCopy(gb.castling_rights);
-    }
-
-    getEnPassant_piece_position(){
-        return this.enPassant_piece_position;
-    }
-
-    SetEnPassant_piece_position(position){
-        this.enPassant_piece_position = position;
-    }
-
-    getPawnPromotedTo(){
-        return this.pawn_promoted_to;
-    }
-
-    setPawnPromotedTo(piece){
-        this.pawn_promoted_to = piece;
-    }
-
-    getCastlingRightsBefore(){
-        return this.castling_rights_before;
-    }
-}
-
-const GAME_STATES = Object.freeze({
-    PLAYING: 0,
-    WHITE_WON: 1,
-    BLACK_WON: 2,
-    DRAW_BY_STALEMATE: 3
-});
-
-class GameBoard{
-
-    constructor(board){
-        this.board = board;
-
-        this.castling_rights = {
-            white_queen_side: true,
-            white_king_side: true,
-            black_queen_side: true,
-            black_king_side: true,
-        }
-
-        this.current_game_state = GAME_STATES.PLAYING;
-
-        this.piece_count = {
-            P: 8,
-            N: 2,
-            B: 2,
-            R: 2,
-            Q: 1,
-            K: 1,
-            p: 8,
-            n: 2,
-            b: 2,
-            r: 2,
-            q: 1,
-            k: 1
-        }
-
-        this.captured_piece_count = {
-            P: 0,
-            N: 0,
-            B: 0,
-            R: 0,
-            Q: 0,
-            p: 0,
-            n: 0,
-            b: 0,
-            r: 0,
-            q: 0
-        }
-
-        this.piece_type = Object.freeze({
-            WHITE_PAWN: "P",
-            WHITE_KNIGHT: "N",
-            WHITE_BISHOP: "B",
-            WHITE_ROOK: "R",
-            WHITE_QUEEN: "Q",
-            WHITE_KING: "K",
-            BLACK_PAWN: "p",
-            BLACK_KNIGHT: "n",
-            BLACK_BISHOP: "b",
-            BLACK_ROOK: "r",
-            BLACK_QUEEN: "q",
-            BLACK_KING: "k"
-        });
-
-        this.turn_of = WHITE;
-    }
-
-    init_board(){
-        this.board = Array(FILE * RANK).fill("");
-    }
-
-    countTotalPieces() {
-        let total = 0;
-
-        for (const pieces in this.piece_count) {
-            total += this.piece_count[pieces];
-        }
-
-        return total;
-    }
-
-    decrease_piece_count_of(piece){
-        if (piece != this.piece_type.WHITE_KING && piece != this.piece_type.BLACK_KING) {
-            
-            if (this.piece_count[piece] >= 1) {
-                this.piece_count[piece]--;
-            }
-        }
-    }
-
-    increase_piece_count_of(piece){
-        if (piece != this.piece_type.WHITE_KING && piece != this.piece_type.BLACK_KING) {
-            this.piece_count[piece]++;
-        }
-    }
-
-    increase_captured_piece_count_of(piece){
-        if (piece != this.piece_type.WHITE_KING && piece != this.piece_type.BLACK_KING) {
-            this.captured_piece_count[piece]++;
-        }
-    }
-    
-}
-
-gb = new GameBoard(null);
-
-gb.init_board();
 
 const pieceValues = {
     P: 100, 
@@ -370,14 +213,6 @@ const pieceSquareTablesEndGame = {
     ]
 };
 
-function addListenerToSquares() {
-    const DOM_squares = Array.from(document.getElementsByClassName("square"));
-
-    DOM_squares.forEach(sq => {
-        sq.addEventListener("click", squareClicked);
-    });
-}
-
 //piaces name and their image name
 const pieces_name_to_img_name = {
     "r": "b_r",
@@ -392,6 +227,208 @@ const pieces_name_to_img_name = {
     "B": "w_b",
     "Q": "w_q",
     "K": "w_k"
+}
+
+let previous_move = null;
+
+let pawn_promotion_square=null;
+
+let nodesVisited = 0;
+
+const killerMoves = [];
+
+let Previous_selected_square = {
+    dom : null,
+    index: null
+}
+
+class Move {
+    constructor(from, to, enPassant_piece_position=null, castlingRookToMove=null, pawn_promoted_to=null, captured_piece=null, moving_piece){
+        this.from = from;
+        this.to = to;
+
+        this.enPassant_piece_position = enPassant_piece_position;
+        this.castlingRookToMove = castlingRookToMove;
+        this.pawn_promoted_to = pawn_promoted_to;
+        this.captured_piece = captured_piece;
+
+        this.moving_piece = moving_piece;
+
+        this.castling_rights_before = deepCopy(gb.castling_rights);
+    }
+
+    getEnPassant_piece_position(){
+        return this.enPassant_piece_position;
+    }
+
+    SetEnPassant_piece_position(position){
+        this.enPassant_piece_position = position;
+    }
+
+    getPawnPromotedTo(){
+        return this.pawn_promoted_to;
+    }
+
+    setPawnPromotedTo(piece){
+        this.pawn_promoted_to = piece;
+    }
+
+    getCastlingRightsBefore(){
+        return this.castling_rights_before;
+    }
+}
+
+const GAME_STATES = Object.freeze({
+    PLAYING: 0,
+    WHITE_WON: 1,
+    BLACK_WON: 2,
+    DRAW_BY_STALEMATE: 3
+});
+
+class GameBoard{
+
+    constructor(board){
+
+        this.board = board;
+
+        this.castling_rights = {
+            white_queen_side: true,
+            white_king_side: true,
+            black_queen_side: true,
+            black_king_side: true,
+        }
+
+        this.current_game_state = GAME_STATES.PLAYING;
+
+        this.piece_count = {
+            P: 8,
+            N: 2,
+            B: 2,
+            R: 2,
+            Q: 1,
+            K: 1,
+            p: 8,
+            n: 2,
+            b: 2,
+            r: 2,
+            q: 1,
+            k: 1
+        }
+
+        this.captured_piece_count = {
+            P: 0,
+            N: 0,
+            B: 0,
+            R: 0,
+            Q: 0,
+            p: 0,
+            n: 0,
+            b: 0,
+            r: 0,
+            q: 0
+        }
+
+        this.piece_type = Object.freeze({
+            WHITE_PAWN: "P",
+            WHITE_KNIGHT: "N",
+            WHITE_BISHOP: "B",
+            WHITE_ROOK: "R",
+            WHITE_QUEEN: "Q",
+            WHITE_KING: "K",
+            BLACK_PAWN: "p",
+            BLACK_KNIGHT: "n",
+            BLACK_BISHOP: "b",
+            BLACK_ROOK: "r",
+            BLACK_QUEEN: "q",
+            BLACK_KING: "k"
+        });
+
+        this.turn_of = WHITE;
+
+
+        this.init_board();
+    }
+
+    init_board(){
+        this.board = Array(FILE * RANK).fill("");
+    }
+
+    countTotalPieces() {
+        let total = 0;
+
+        for (const pieces in this.piece_count) {
+            total += this.piece_count[pieces];
+        }
+
+        return total;
+    }
+
+    decrease_piece_count_of(piece){
+        if (piece != this.piece_type.WHITE_KING && piece != this.piece_type.BLACK_KING) {
+            
+            if (this.piece_count[piece] >= 1) {
+                this.piece_count[piece]--;
+            }
+        }
+    }
+
+    increase_piece_count_of(piece){
+        if (piece != this.piece_type.WHITE_KING && piece != this.piece_type.BLACK_KING) {
+            this.piece_count[piece]++;
+        }
+    }
+
+    increase_captured_piece_count_of(piece){
+        if (piece != this.piece_type.WHITE_KING && piece != this.piece_type.BLACK_KING) {
+            this.captured_piece_count[piece]++;
+        }
+    }
+    
+    updatePieceCounts() {
+        // Reset piece counts
+        const initial_counts = {
+            P: 0, N: 0, B: 0, R: 0, Q: 0, K: 1,
+            p: 0, n: 0, b: 0, r: 0, q: 0, k: 1
+        };
+        
+        const expected_counts = {
+            P: 8, N: 2, B: 2, R: 2, Q: 1, K: 1,
+            p: 8, n: 2, b: 2, r: 2, q: 1, k: 1
+        };
+    
+        for (const piece of this.board) {
+            if (piece in initial_counts) {
+                initial_counts[piece]++;
+            }
+        }
+
+        for (const piece in this.piece_count) {
+            this.piece_count[piece] = initial_counts[piece];
+            this.captured_piece_count[piece] = Math.max(0, expected_counts[piece] - initial_counts[piece]);
+        }
+    }
+}
+
+gb = new GameBoard(null);
+
+addListenerToSquares();
+
+load_img_in_array(pieces_name_to_img_name);
+
+fen_to_board(gb.board);
+
+gb.updatePieceCounts();
+
+update_piece_capture_html();
+
+update_board_view(gb.board);
+
+function addListenerToSquares() {
+    const DOM_squares = Array.from(document.getElementsByClassName("square"));
+
+    DOM_squares.forEach(sq => {
+        sq.addEventListener("click", squareClicked);
+    });
 } 
 
 function load_img_in_array(pieces_name_to_img_name) {
@@ -481,6 +518,12 @@ function getPieceColor(piece) {
         return "";
     }
     return (isUpperCase(piece)) ? WHITE : BLACK;
+}
+
+function findKingPosition(color, game_board) {
+    let piece = (color == WHITE)? "K" : "k";
+
+    return game_board.board.indexOf(piece);
 }
 
 function squareClicked(event) {
@@ -748,6 +791,8 @@ async function makeMove(move) {
     //console.log(gb.board);
     //console.log("evaluarion : ",evaluateBoard(gb));
 
+    console.log(distanceBetweenKings(findKingPosition(WHITE, gb), findKingPosition(BLACK, gb)));
+
 }
 
 function movePiece(move, game_board) {
@@ -844,6 +889,13 @@ function undoMove(move, game_board){
 
     //restore previous castling rights
     gb.castling_rights = move.getCastlingRightsBefore();
+
+    //previous turn of
+    if (game_board.turn_of == WHITE) {
+        game_board.turn_of = BLACK;
+    }else{
+        game_board.turn_of = WHITE;
+    }
 }
 
 function update_game_board_piece_count(move) {
@@ -924,7 +976,6 @@ function isGameFinished(game_board) {
     return checkEndCondition(game_board.turn_of);
 }
 
-
 function countTotalValidMovesFor(color, game_board){
 
     let board = game_board.board;
@@ -990,7 +1041,7 @@ function computerMove() {
 
     const { move, value } = minimax(deepCopy(gb), false, 3, -Infinity, Infinity);
 
-    console.log("computer : ",move, " nodes : ", nodesVisited);
+    console.log("computer : ",move, " nodes : ", nodesVisited, " value: ", value);
 
     return move;
 }
@@ -2028,6 +2079,64 @@ function isSameMove(move1, move2) {
     return move1.from === move2.from && move1.to === move2.to;
 }
 
+function squareToEdgeMinDistance(square) {
+
+    let x = square % RANK;
+    let y = Math.floor(square / FILE);
+
+    let min = Infinity;
+    let temp = 0;
+    
+    for (let nx = x + 1; nx < 8; nx++){
+        temp++;
+    }
+
+    if (temp < min) {
+        min = temp;
+    }
+
+    temp = 0;
+
+    for (let nx = x - 1; nx >= 0; nx--){
+        temp++;
+    }
+
+    if (temp < min) {
+        min = temp;
+    }
+
+    temp = 0;
+
+    for (let ny = y + 1; ny < 8; ny++){
+        temp++;
+    }
+
+    if (temp < min) {
+        min = temp;
+    }
+
+    temp = 0;
+
+    for (let ny = y - 1; ny >= 0; ny--){
+        temp++;
+    }
+
+    if (temp < min) {
+        min = temp;
+    }
+
+    return min;
+}
+
+function distanceBetweenKings(whiteKingSquare, blackKingSquare) {
+    let white_x = whiteKingSquare % RANK;
+    let white_y = Math.floor(whiteKingSquare / FILE);
+    let black_x = blackKingSquare % RANK;
+    let black_y = Math.floor(blackKingSquare / FILE);
+
+    return Math.floor(Math.sqrt(Math.pow(white_x - black_x, 2) + Math.pow(white_y - black_y, 2)));
+}
+
 function minimax(game_board, isMaximizingPlayer, depth, alfa, beta) {
 
     nodesVisited++;
@@ -2068,7 +2177,7 @@ function minimax(game_board, isMaximizingPlayer, depth, alfa, beta) {
 
     for (const move of all_moves) {
         movePiece(move, game_board);
-        let { value } = minimax(game_board, !isMaximizingPlayer, depth - 1, alfa, beta);
+        let { value } = minimax(deepCopy(game_board), !isMaximizingPlayer, depth - 1, alfa, beta);
         undoMove(move, game_board);
 
         //better value for low depth
@@ -2169,6 +2278,8 @@ function extendSearchForCaputures(game_board, isMaximizingPlayer, alfa, beta, de
     return alfa;
 }
 
+
+
 function evaluateBoard(game_board) {
 
     board = game_board.board;
@@ -2230,23 +2341,35 @@ function evaluateBoard(game_board) {
         }
     }
 
+    if (isEndgame(game_board)) {
+        
+        //white winning endgame
+        if (value > 0) {
+
+            let opponentKingToEdgeDistance = squareToEdgeMinDistance(findKingPosition(BLACK, game_board));
+            
+            value -= opponentKingToEdgeDistance * 10;
+
+            value -= distanceBetweenKings(findKingPosition(WHITE, game_board), findKingPosition(BLACK, game_board)) * 10;
+
+        }else{//black winning endgame
+
+            let opponentKingToEdgeDistance = squareToEdgeMinDistance(findKingPosition(WHITE, game_board));
+            
+            value += opponentKingToEdgeDistance * 10;
+
+            value += distanceBetweenKings(findKingPosition(WHITE, game_board), findKingPosition(BLACK, game_board)) * 10;
+
+            console.log(distanceBetweenKings(findKingPosition(WHITE, game_board), findKingPosition(BLACK, game_board)) * 10);
+        }
+    }
+
     return value;
 }
-
-
-addListenerToSquares();
-
-load_img_in_array(pieces_name_to_img_name) 
-
-fen_to_board(gb.board);
-
-update_piece_capture_html();
 
 console.log(gb.board);
 
 //perft
 //console.log(perft(3, turn_of, gb.board));
-
-update_board_view(gb.board);
 
 console.log(evaluateBoard(gb));
