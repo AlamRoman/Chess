@@ -5,7 +5,7 @@ const WHITE = "w";
 const BLACK = "b";
 const PIECES_IMG_FOLDER_PATH = "resources/pieces/";
 
-//const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 
 //king check test
 //const STARTING_FEN = "7K/2r5/q7/8/8/8/k7/8";
@@ -25,10 +25,12 @@ const PIECES_IMG_FOLDER_PATH = "resources/pieces/";
 //endgame test
 //const STARTING_FEN = "8/7r/1k6/3p4/3P1B2/42K1/8/8";
 
-const STARTING_FEN = "qr6/8/8/7k/8/4K3/8";
+//const STARTING_FEN = "r6/8/8/7k/8/4K3/8";
 
-let player_color = WHITE;
-let computer_color = BLACK;
+let GAME_TYPE = document.getElementById("game_type").value;
+
+let player_color = BLACK;
+let computer_color = WHITE;
 
 //hashmap with pieces name and their images
 let pieces_img = new Map();
@@ -235,7 +237,12 @@ let pawn_promotion_square=null;
 
 let nodesVisited = 0;
 
-const killerMoves = [];
+const historyHeuristic = { 
+    [WHITE]: {}, 
+    [BLACK]: {} 
+};
+
+const killerMoves = {};
 
 let Previous_selected_square = {
     dom : null,
@@ -423,6 +430,33 @@ update_piece_capture_html();
 
 update_board_view(gb.board);
 
+
+//first computer move if the game is vs computer and computer is WHITE
+if (GAME_TYPE == 0 && computer_color == WHITE) {
+    
+    document.getElementById("board").classList.add("flip-table");
+
+    let cMove = computerMove();
+
+    remove_highlight_previous_move();
+
+    movePiece(cMove, gb);
+
+    update_game_board_piece_count(cMove);
+
+    highlight_previous_move();
+
+    isGameFinished(gb);
+
+    update_board_view(gb.board);
+
+    if (gb.current_game_state != GAME_STATES.PLAYING) {
+        setTimeout(function(){
+            showEndGameScreen();
+        }, 500);
+    }
+}
+
 function addListenerToSquares() {
     const DOM_squares = Array.from(document.getElementsByClassName("square"));
 
@@ -561,8 +595,10 @@ function squareClicked(event) {
             element.remove();
         }
 
-        //simulate 2 player game
-        swap_player_and_flip_table();
+        //flip board for 2 players game
+        if (GAME_TYPE == 1) {
+            swap_player_and_flip_table();
+        }
 
         Previous_selected_square.dom.classList.remove("selected");
         Previous_selected_square.dom = null;
@@ -648,8 +684,10 @@ function squareClicked(event) {
 
         makeMove(move);
 
-        //simulate 2 player game
-        swap_player_and_flip_table();
+        //flip board for 2 playes game
+        if (GAME_TYPE == 1) {
+            swap_player_and_flip_table();
+        }
 
         Previous_selected_square.dom.classList.remove("selected");
         Previous_selected_square.dom = null;
@@ -660,7 +698,6 @@ function squareClicked(event) {
 
 function swap_player_and_flip_table() {
 
-    /*
     if (player_color == WHITE) {
         document.getElementById("board").classList.add("flip-table");
         player_color = BLACK;
@@ -670,7 +707,6 @@ function swap_player_and_flip_table() {
         player_color = WHITE;
         computer_color = BLACK;
     }
-        */
 }
 
 function show_pawn_promotion_menu_at(square_index, piece_color){
@@ -789,9 +825,7 @@ async function makeMove(move) {
     }
 
     //console.log(gb.board);
-    //console.log("evaluarion : ",evaluateBoard(gb));
-
-    console.log(distanceBetweenKings(findKingPosition(WHITE, gb), findKingPosition(BLACK, gb)));
+    console.log("evaluarion : ",evaluateBoard(gb));
 
 }
 
@@ -1039,7 +1073,9 @@ function computerMove() {
 
     nodesVisited = 0;
 
-    const { move, value } = minimax(deepCopy(gb), false, 3, -Infinity, Infinity);
+    let isMax = (computer_color == WHITE) ? true : false;
+
+    const { move, value } = minimax(deepCopy(gb), isMax, 3, -Infinity, Infinity);
 
     console.log("computer : ",move, " nodes : ", nodesVisited, " value: ", value);
 
@@ -2027,28 +2063,35 @@ function isEndgame(game_board) {
     return false;
 }
 
-function orderMoves(moves, depth) {
+function orderMoves(moves, depth, isMaximizingPlayer) {
     
     function guessMoveScore(move) {
-
         let score = 0;
 
-        //promotion
+        // Promotion
         if (move.pawn_promoted_to != null) {
             score += 1000;
         }
 
-        //MVV-LVA
-        if(move.captured_piece != null){
-            score += pieceValues[move.captured_piece.toUpperCase()] * 10 - pieceValues[move.moving_piece.toUpperCase()];
+        // MVV-LVA (prioritize highest-value victim, lowest-value attacker)
+        if (move.captured_piece != null) {
+            score += pieceValues[move.captured_piece.toUpperCase()] * 10 
+                    - pieceValues[move.moving_piece.toUpperCase()];
         }
 
+        // History Heuristic
+        const player = isMaximizingPlayer ? WHITE : BLACK;
+        const historyScore = (historyHeuristic[player][move.from]?.[move.to] || 0) / 100;
+        score += historyScore;
+
+        // Killer moves (now checks player turn)
+        if (isKillerMove(move, depth, isMaximizingPlayer)) { 
+            score += 500;
+        }
+
+        // Castling bonus
         if (move.castlingRookToMove != null) {
-            score += 30; // Bonus for castling
-        }
-
-        if (isKillerMove(move, depth)) {
-            score += 500; //bonus for killer moves
+            score += 30;
         }
 
         return score;
@@ -2057,22 +2100,24 @@ function orderMoves(moves, depth) {
     return moves.sort((a, b) => guessMoveScore(b) - guessMoveScore(a));
 }
 
-function addKillerMove(move, depth) {
-    if (!killerMoves[depth]) {
-        killerMoves[depth] = [];
+function addKillerMove(move, depth, isMaximizingPlayer) {
+    const key = `${depth}-${isMaximizingPlayer}`;
+    
+    if (!killerMoves[key]) {
+        killerMoves[key] = [];
     }
 
-    // Avoid duplicates
-    if (!killerMoves[depth].some(killer => isSameMove(killer, move))) {
-        if (killerMoves[depth].length >= 2) {
-            killerMoves[depth].shift(); // Remove oldest move if there are already two
+    if (!killerMoves[key].some(killer => isSameMove(killer, move))) {
+        if (killerMoves[key].length >= 2) {
+            killerMoves[key].shift();
         }
-        killerMoves[depth].push(move);
+        killerMoves[key].push(move);
     }
 }
 
-function isKillerMove(move, depth) {
-    return killerMoves[depth] && killerMoves[depth].some(killer => isSameMove(killer, move));
+function isKillerMove(move, depth, isMaximizingPlayer) {
+    const key = `${depth}-${isMaximizingPlayer}`;
+    return killerMoves[key]?.some(killer => isSameMove(killer, move)) || false;
 }
 
 function isSameMove(move1, move2) {
@@ -2165,7 +2210,7 @@ function minimax(game_board, isMaximizingPlayer, depth, alfa, beta) {
 
     let all_moves = [];
     for (let i = 0; i < b.length; i++) {
-        if (getPieceColor(b[i]) === (isMaximizingPlayer ?  player_color : computer_color)) {
+        if (getPieceColor(b[i]) === (isMaximizingPlayer ?  WHITE : BLACK)) {
             const piece_moves = generate_moves(b[i], i, game_board);
             if (piece_moves.length > 0) {
                 all_moves = [...all_moves, ...piece_moves];
@@ -2173,7 +2218,7 @@ function minimax(game_board, isMaximizingPlayer, depth, alfa, beta) {
         }
     }
 
-    all_moves = orderMoves(all_moves, depth);
+    all_moves = orderMoves(all_moves, depth, isMaximizingPlayer);
 
     for (const move of all_moves) {
         movePiece(move, game_board);
@@ -2207,7 +2252,13 @@ function minimax(game_board, isMaximizingPlayer, depth, alfa, beta) {
         }
 
         if (beta <= alfa) {
-            addKillerMove(move, depth);
+            addKillerMove(move, depth, isMaximizingPlayer);
+            
+            // Update history heuristic (add bonus for moves causing cutoffs)
+            const player = isMaximizingPlayer ? WHITE : BLACK;
+            if (!historyHeuristic[player][move.from]) historyHeuristic[player][move.from] = {};
+            historyHeuristic[player][move.from][move.to] = (historyHeuristic[player][move.from][move.to] || 0) + depth * depth;
+
             break;
         }
     }
@@ -2251,7 +2302,7 @@ function extendSearchForCaputures(game_board, isMaximizingPlayer, alfa, beta, de
 
     let all_moves = [];
     for (let i = 0; i < board.length; i++) {
-        if (getPieceColor(board[i]) === (isMaximizingPlayer ?  player_color : computer_color)) {
+        if (getPieceColor(board[i]) === (isMaximizingPlayer ?  WHITE : BLACK)) {
             const piece_moves = generate_moves(board[i], i, game_board, true);
             if (piece_moves.length > 0) {
                 all_moves = [...all_moves, ...piece_moves];
@@ -2259,7 +2310,7 @@ function extendSearchForCaputures(game_board, isMaximizingPlayer, alfa, beta, de
         }
     }
 
-    all_moves = orderMoves(all_moves, depth+3);
+    all_moves = orderMoves(all_moves, depth+3, isMaximizingPlayer);
 
     //console.log("cap : ", all_moves.length, all_moves);
 
@@ -2277,8 +2328,6 @@ function extendSearchForCaputures(game_board, isMaximizingPlayer, alfa, beta, de
 
     return alfa;
 }
-
-
 
 function evaluateBoard(game_board) {
 
@@ -2360,7 +2409,6 @@ function evaluateBoard(game_board) {
 
             value += distanceBetweenKings(findKingPosition(WHITE, game_board), findKingPosition(BLACK, game_board)) * 10;
 
-            console.log(distanceBetweenKings(findKingPosition(WHITE, game_board), findKingPosition(BLACK, game_board)) * 10);
         }
     }
 

@@ -9,6 +9,12 @@
 </head>
 <body>
 
+    <!--
+        0: vs computer
+        1: 2 players
+    -->
+    <input type="hidden" id="game_type" value="0">
+
     <div class="container">
         <div class="board_container">
             <?php include "include/generate_board.php"; ?>
