@@ -11,7 +11,7 @@ const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 //const STARTING_FEN = "7K/2r5/q7/8/8/8/k7/8";
 
 //enpassant test
-//const STARTING_FEN = "8/3p4/8/8/4P3/8/8/8";
+//const STARTING_FEN = "8/3p4/k6K/8/4P3/8/8/8";
 
 //castling test
 //const STARTING_FEN = "r3k2r/8/1N6/pppppppp/PPPPPPPP/8/8/R3K2R";
@@ -29,8 +29,8 @@ const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 
 let GAME_TYPE = document.getElementById("game_type").value;
 
-let player_color = BLACK;
-let computer_color = WHITE;
+let player_color = WHITE;
+let computer_color = BLACK;
 
 //hashmap with pieces name and their images
 let pieces_img = new Map();
@@ -232,6 +232,8 @@ const pieces_name_to_img_name = {
 }
 
 let previous_move = null;
+
+let moves_history = [];
 
 let pawn_promotion_square=null;
 
@@ -802,26 +804,26 @@ async function makeMove(move) {
     }
 
     //computer move
-    let cMove = computerMove();
+    if (GAME_TYPE == 0) {
+        let cMove = computerMove();
 
-    remove_highlight_previous_move();
+        remove_highlight_previous_move();
 
-    movePiece(cMove, gb);
+        movePiece(cMove, gb);
 
-    update_game_board_piece_count(cMove);
+        update_game_board_piece_count(cMove);
 
-    highlight_previous_move();
+        highlight_previous_move();
 
-    isGameFinished(gb);
+        isGameFinished(gb);
 
-    //computer move
+        await update_board_view(gb.board);
 
-    await update_board_view(gb.board);
-
-    if (gb.current_game_state != GAME_STATES.PLAYING) {
-        setTimeout(function(){
-            showEndGameScreen();
-        }, 500);
+        if (gb.current_game_state != GAME_STATES.PLAYING) {
+            setTimeout(function(){
+                showEndGameScreen();
+            }, 500);
+        }
     }
 
     //console.log(gb.board);
@@ -859,7 +861,7 @@ function movePiece(move, game_board) {
     if (move.enPassant_piece_position != null) {
         move.captured_piece = board[move.enPassant_piece_position];
         board[move.enPassant_piece_position] = "";
-        move.SetEnPassant_piece_position(null);
+        //move.SetEnPassant_piece_position(null);
     }
 
     //moves castling rook
@@ -868,7 +870,8 @@ function movePiece(move, game_board) {
         board[move.castlingRookToMove.from] = "";
     }
 
-    previous_move = new Move(from, to);
+    previous_move = new Move(from, to, move.enPassant_piece_position, move.castlingRookToMove, move.pawn_promoted_to, move.captured_piece, move.moving_piece);
+    moves_history.push(previous_move);
 
     if (game_board.turn_of == WHITE) {
         game_board.turn_of = BLACK;
@@ -921,8 +924,17 @@ function undoMove(move, game_board){
         }
     }
 
+    //restore enpassant pawn
+    if (move.enPassant_piece_position != null) {
+        board[move.enPassant_piece_position] = move.captured_piece;
+    }
+
     //restore previous castling rights
-    gb.castling_rights = move.getCastlingRightsBefore();
+    game_board.castling_rights = move.getCastlingRightsBefore();
+
+    moves_history.pop();
+
+    previous_move = moves_history[moves_history.length - 1];
 
     //previous turn of
     if (game_board.turn_of == WHITE) {
@@ -1185,6 +1197,8 @@ function generate_moves(piece, position, game_board, onlyCaptureMoves=false) {
             }
         }
 
+        console.log("prv: ", previous_move);
+
         //enPassant
         if (y == 3 && previous_move != null && board[previous_move.to] == "p") {
             
@@ -1217,10 +1231,10 @@ function generate_moves(piece, position, game_board, onlyCaptureMoves=false) {
                     if (!isKingInCheck(pieceColor, board_copy)) {
                         if(onlyCaptureMoves){
                             if (isEnemyPiece(board[newIndex])) {
-                                moves.push(new Move(position, newIndex, previous_move.to, "p"));//add to legal moves
+                                moves.push(new Move(position, newIndex, previous_move.to, null, null, "p", "P"));//add to legal moves
                             }
                         }else{
-                            moves.push(new Move(position, newIndex, previous_move.to, "p"));//add to legal moves
+                            moves.push(new Move(position, newIndex, previous_move.to, null, null, "p", "P"));//add to legal moves
                         }
                     }
 
@@ -1238,10 +1252,10 @@ function generate_moves(piece, position, game_board, onlyCaptureMoves=false) {
                     if (!isKingInCheck(pieceColor, board_copy)) {
                         if(onlyCaptureMoves){
                             if (isEnemyPiece(board[newIndex])) {
-                                moves.push(new Move(position, newIndex, previous_move.to, "p"));//add to legal moves
+                                moves.push(new Move(position, newIndex, previous_move.to, null, null, "p", "P"));//add to legal moves
                             }
                         }else{
-                            moves.push(new Move(position, newIndex, previous_move.to, "p"));//add to legal moves
+                            moves.push(new Move(position, newIndex, previous_move.to, null, null, "p", "P"));//add to legal moves
                         }
                     }
                 }
@@ -1329,10 +1343,10 @@ function generate_moves(piece, position, game_board, onlyCaptureMoves=false) {
                     if (!isKingInCheck(pieceColor, board_copy)) {
                         if(onlyCaptureMoves){
                             if (isEnemyPiece(board[newIndex])) {
-                                moves.push(new Move(position, newIndex, previous_move.to, "P"));//add to legal moves
+                                moves.push(new Move(position, newIndex, previous_move.to, null, null, "P", "p"));//add to legal moves
                             }
                         }else{
-                            moves.push(new Move(position, newIndex, previous_move.to, "P"));//add to legal moves
+                            moves.push(new Move(position, newIndex, previous_move.to, null, null, "P", "p"));//add to legal moves
                         }
                     }
 
@@ -1350,10 +1364,10 @@ function generate_moves(piece, position, game_board, onlyCaptureMoves=false) {
                     if (!isKingInCheck(pieceColor, board_copy)) {
                         if(onlyCaptureMoves){
                             if (isEnemyPiece(board[newIndex])) {
-                                moves.push(new Move(position, newIndex, previous_move.to, "P"));//add to legal moves
+                                moves.push(new Move(position, newIndex, previous_move.to, null, null, "P", "p"));//add to legal moves
                             }
                         }else{
-                            moves.push(new Move(position, newIndex, previous_move.to, "P"));//add to legal moves
+                            moves.push(new Move(position, newIndex, previous_move.to, null, null, "P", "p"));//add to legal moves
                         }
                     }
                 }
@@ -2219,6 +2233,8 @@ function minimax(game_board, isMaximizingPlayer, depth, alfa, beta) {
     }
 
     all_moves = orderMoves(all_moves, depth, isMaximizingPlayer);
+
+    console.log("all ", all_moves);
 
     for (const move of all_moves) {
         movePiece(move, game_board);
