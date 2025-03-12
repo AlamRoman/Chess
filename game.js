@@ -29,8 +29,8 @@ const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 
 let GAME_TYPE = document.getElementById("game_type").value;
 
-let player_color = WHITE;
-let computer_color = BLACK;
+let player_color = BLACK;
+let computer_color = WHITE;
 
 //hashmap with pieces name and their images
 let pieces_img = new Map();
@@ -238,6 +238,7 @@ let moves_history = [];
 let pawn_promotion_square=null;
 
 let nodesVisited = 0;
+let extendedSearchDepthCount = 0;
 
 const historyHeuristic = { 
     [WHITE]: {}, 
@@ -415,6 +416,24 @@ class GameBoard{
             this.piece_count[piece] = initial_counts[piece];
             this.captured_piece_count[piece] = Math.max(0, expected_counts[piece] - initial_counts[piece]);
         }
+    }
+
+    print_board(){
+        console.log("--> Board : ");
+
+        let temp = "";
+        for (let i = 0; i < RANK; i++) {
+            for (let j = 0; j < FILE; j++) {
+                if (this.board[i*RANK+j] != "") {
+                    temp += " " + this.board[i*RANK+j] + " ";
+                }else{
+                    temp += " . ";
+                }
+            }
+            temp += "\n";
+        }
+
+        console.log(temp);
     }
 }
 
@@ -1084,12 +1103,13 @@ function computerMove() {
     */
 
     nodesVisited = 0;
+    extendedSearchDepthCount = 0;
 
     let isMax = (computer_color == WHITE) ? true : false;
 
     const { move, value } = minimax(deepCopy(gb), isMax, 3, -Infinity, Infinity);
 
-    console.log("computer : ",move, " nodes : ", nodesVisited, " value: ", value);
+    console.log("computer : ", move.moving_piece , " , " , move, " nodes : ", nodesVisited, " , main : " + (nodesVisited - extendedSearchDepthCount) + " , ext : " + extendedSearchDepthCount + " , value: ", value);
 
     return move;
 }
@@ -1127,6 +1147,15 @@ function check_and_update_castling_rights(piece_to_move, from, game_board){
 
         game_board.castling_rights.black_king_side = false;
     }
+}
+
+function isSquareUnderAttack(pieceColor, board, square) {
+    // Simulate placing a king on the square and check if it is in check
+    const originalPiece = board[square];
+    board[square] = (pieceColor === WHITE) ? "K" : "k";
+    const isAttacked = isKingInCheck(pieceColor, board);
+    board[square] = originalPiece;
+    return isAttacked;
 }
 
 function generate_moves(piece, position, game_board, onlyCaptureMoves=false) {
@@ -1197,7 +1226,7 @@ function generate_moves(piece, position, game_board, onlyCaptureMoves=false) {
             }
         }
 
-        console.log("prv: ", previous_move);
+        //console.log("prv: ", previous_move);
 
         //enPassant
         if (y == 3 && previous_move != null && board[previous_move.to] == "p") {
@@ -1740,11 +1769,12 @@ function generate_moves(piece, position, game_board, onlyCaptureMoves=false) {
         }
 
         //castling
-
+        
         let your_back_rank = (pieceColor == WHITE) ? 7 : 0;
-        let your_king_side_castiling_right = (pieceColor == WHITE) ? game_board.castling_rights.white_king_side : game_board.castling_rights.black_king_side;
+        let your_king_side_castling_right = (pieceColor == WHITE) ? game_board.castling_rights.white_king_side : game_board.castling_rights.black_king_side;
         let your_queen_side_castling_right = (pieceColor == WHITE) ? game_board.castling_rights.white_queen_side : game_board.castling_rights.black_queen_side;
-
+        
+        /*
         if (y == your_back_rank && (your_king_side_castiling_right || your_queen_side_castling_right) && !isKingInCheck(pieceColor, board)) {
 
             //king side
@@ -1797,6 +1827,49 @@ function generate_moves(piece, position, game_board, onlyCaptureMoves=false) {
                 }
             }
 
+        }
+        */
+
+
+        if (y === your_back_rank && !isKingInCheck(pieceColor, board)) {
+            // King-side castling
+            if (your_king_side_castling_right &&
+                board[row_col_to_position(y, x + 1)] === "" &&
+                board[row_col_to_position(y, x + 2)] === "" &&
+                board[row_col_to_position(y, 7)] === ((pieceColor === WHITE) ? "R" : "r")) {
+
+                // Check if the squares the king moves over are safe
+                if (!isSquareUnderAttack(pieceColor, board, row_col_to_position(y, x + 1)) &&
+                    !isSquareUnderAttack(pieceColor, board, row_col_to_position(y, x + 2))) {
+
+                    moves.push(new Move(
+                        position,
+                        row_col_to_position(y, x + 2),
+                        null,
+                        new Move(row_col_to_position(y, 7), row_col_to_position(y, x + 1))
+                    ));
+                }
+            }
+
+            // Queen-side castling
+            if (your_queen_side_castling_right &&
+                board[row_col_to_position(y, x - 1)] === "" &&
+                board[row_col_to_position(y, x - 2)] === "" &&
+                board[row_col_to_position(y, x - 3)] === "" &&
+                board[row_col_to_position(y, 0)] === ((pieceColor === WHITE) ? "R" : "r")) {
+
+                // Check if the squares the king moves over are safe
+                if (!isSquareUnderAttack(pieceColor, board, row_col_to_position(y, x - 1)) &&
+                    !isSquareUnderAttack(pieceColor, board, row_col_to_position(y, x - 2))) {
+
+                    moves.push(new Move(
+                        position,
+                        row_col_to_position(y, x - 2),
+                        null,
+                        new Move(row_col_to_position(y, 0), row_col_to_position(y, x - 1))
+                    ));
+                }
+            }
         }
 
     }else if(piece == "N" || piece == "n"){//knight
@@ -2234,7 +2307,7 @@ function minimax(game_board, isMaximizingPlayer, depth, alfa, beta) {
 
     all_moves = orderMoves(all_moves, depth, isMaximizingPlayer);
 
-    console.log("all ", all_moves);
+    //console.log("all ", all_moves);
 
     for (const move of all_moves) {
         movePiece(move, game_board);
@@ -2301,6 +2374,7 @@ function minimax(game_board, isMaximizingPlayer, depth, alfa, beta) {
 function extendSearchForCaputures(game_board, isMaximizingPlayer, alfa, beta, depth) {
 
     nodesVisited++;
+    extendedSearchDepthCount++;
 
     let board = game_board.board;
 
@@ -2386,7 +2460,8 @@ function evaluateBoard(game_board) {
             try {
                 pieceColor = getPieceColor(piece)
             } catch (error) {
-                console.log("pro ",board);
+                console.log("error: n depth " + extendedSearchDepthCount);
+                game_board.print_board();
             }
             const pieceType = piece.toUpperCase();
 
@@ -2431,7 +2506,7 @@ function evaluateBoard(game_board) {
     return value;
 }
 
-console.log(gb.board);
+gb.print_board();
 
 //perft
 //console.log(perft(3, turn_of, gb.board));
