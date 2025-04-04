@@ -2255,7 +2255,7 @@ function minimax(game_board, isMaximizingPlayer, depth, alfa, beta) {
 
         //return { move: null, value: evaluateBoard(game_board) };
 
-        let final_value = extendSearchForCaptures(deepCopy(game_board), !isMaximizingPlayer, alfa, beta, 4) + (isMaximizingPlayer ? depth : -depth) * 10;
+        let final_value = extendSearchForCaptures(deepCopy(game_board), isMaximizingPlayer, alfa, beta, 4) + (isMaximizingPlayer ? depth : -depth) * 10;
 
         return { move: null, value: final_value};
     }
