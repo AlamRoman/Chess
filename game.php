@@ -13,7 +13,14 @@
         0: vs computer
         1: 2 players
     -->
-    <input type="hidden" id="game_type" value="0">
+    <input type="hidden" id="game_type" value="<?php (isset($_GET["game_type"])) ? $_GET["game_type"] : "0" ?>">
+
+    <!--
+        white
+        black
+        random
+    -->
+    <input type="hidden" id="color" value="white">
 
     <div class="container">
         <div class="board_container">

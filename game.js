@@ -29,8 +29,8 @@ const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 
 let GAME_TYPE = document.getElementById("game_type").value;
 
-let player_color = BLACK;
-let computer_color = WHITE;
+let player_color = WHITE;
+let computer_color = BLACK;
 
 //hashmap with pieces name and their images
 let pieces_img = new Map();
@@ -1069,38 +1069,6 @@ function countTotalValidMovesFor(color, game_board){
 }
 
 function computerMove() {
-
-    /*
-    var req = new XMLHttpRequest;
-
-    req.onload = function () {
-        if(req.status == 200){
-            console.log(req.responseText);
-        }else{
-            alert("Error in computer move: " + req.status);
-        }
-    
-    }
-
-    req.open("GET", "computer-move.php?board="+JSON.stringify(board));
-    req.send();
-    */
-
-    //TODO: make intelligent computer move
-
-    /*
-    let moves = Array();
-
-    for (let i = 0; i < gb.board.length; i++) {
-        if (isFriendlyPiece(gb.board[i],computer_color)) {
-            let temp = generate_moves(gb.board[i], i, gb.board);
-
-            moves = [...moves, ...temp];
-        }
-    }
-
-    return moves[Math.floor(Math.random() * moves.length)];
-    */
 
     nodesVisited = 0;
     extendedSearchDepthCount = 0;
@@ -2171,7 +2139,7 @@ function orderMoves(moves, depth, isMaximizingPlayer) {
         const historyScore = (historyHeuristic[player][move.from]?.[move.to] || 0) / 100;
         score += historyScore;
 
-        // Killer moves (now checks player turn)
+        // Killer moves
         if (isKillerMove(move, depth, isMaximizingPlayer)) { 
             score += 500;
         }
@@ -2287,7 +2255,7 @@ function minimax(game_board, isMaximizingPlayer, depth, alfa, beta) {
 
         //return { move: null, value: evaluateBoard(game_board) };
 
-        let final_value = extendSearchForCaputures(deepCopy(game_board), !isMaximizingPlayer, alfa, beta, 3) + (isMaximizingPlayer ? depth : -depth) * 10;
+        let final_value = extendSearchForCaptures(deepCopy(game_board), !isMaximizingPlayer, alfa, beta, 4) + (isMaximizingPlayer ? depth : -depth) * 10;
 
         return { move: null, value: final_value};
     }
@@ -2371,52 +2339,66 @@ function minimax(game_board, isMaximizingPlayer, depth, alfa, beta) {
     return { move: bestMove, value: bestValue };
 }
 
-function extendSearchForCaputures(game_board, isMaximizingPlayer, alfa, beta, depth) {
-
+function extendSearchForCaptures(game_board, isMaximizingPlayer, alpha, beta, depth) {
     nodesVisited++;
     extendedSearchDepthCount++;
 
     let board = game_board.board;
 
+    // Base case: depth limit reached
     if (depth <= 0) {
         return evaluateBoard(game_board);
     }
-    
+
+    // Evaluate the current position
     let eval = evaluateBoard(game_board);
 
-    if (eval >= beta) {
-        return beta;
+    // Alpha-beta pruning
+    if (isMaximizingPlayer) {
+        if (eval >= beta) {
+            return beta; // Beta cutoff
+        }
+        alpha = Math.max(alpha, eval);
+    } else {
+        if (eval <= alpha) {
+            return alpha; // Alpha cutoff
+        }
+        beta = Math.min(beta, eval);
     }
 
-    alfa = Math.max(alfa, eval);
-
+    // Generate all capture moves
     let all_moves = [];
     for (let i = 0; i < board.length; i++) {
-        if (getPieceColor(board[i]) === (isMaximizingPlayer ?  WHITE : BLACK)) {
-            const piece_moves = generate_moves(board[i], i, game_board, true);
+        if (getPieceColor(board[i]) === (isMaximizingPlayer ? WHITE : BLACK)) {
+            const piece_moves = generate_moves(board[i], i, game_board, true); // Only capture moves
             if (piece_moves.length > 0) {
                 all_moves = [...all_moves, ...piece_moves];
             }
         }
     }
 
-    all_moves = orderMoves(all_moves, depth+3, isMaximizingPlayer);
+    all_moves = orderMoves(all_moves, depth, isMaximizingPlayer);
 
-    //console.log("cap : ", all_moves.length, all_moves);
-
+    // Search capture moves
     for (const move of all_moves) {
         movePiece(move, game_board);
-        eval = extendSearchForCaputures(deepCopy(game_board), !isMaximizingPlayer, alfa, beta, depth - 1);
+        eval = extendSearchForCaptures(deepCopy(game_board), !isMaximizingPlayer, alpha, beta, depth - 1);
         undoMove(move, game_board);
 
-        if (eval >= beta) {
-            return beta;
+        if (isMaximizingPlayer) {
+            if (eval >= beta) {
+                return beta; // Beta cutoff
+            }
+            alpha = Math.max(alpha, eval);
+        } else {
+            if (eval <= alpha) {
+                return alpha; // Alpha cutoff
+            }
+            beta = Math.min(beta, eval);
         }
-
-        alfa = Math.max(alfa, eval);
     }
 
-    return alfa;
+    return isMaximizingPlayer ? alpha : beta;
 }
 
 function evaluateBoard(game_board) {
