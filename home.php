@@ -55,10 +55,10 @@
                 <h3 class="mb-4">King-Fisher Chess Engine</h3>
                 
                 <div class="mb-3">
-                    <label class="form-label d-block">Select Game Mode:</label>
+                    <label class="form-label d-block" style="user-select: none;">Select Game Mode:</label>
                     <div class="btn-group" role="group" aria-label="Game Mode">
                         <div class="mx-2">
-                            <input type="radio" class="btn-check" name="game_mode" id="vs_ai" value="0" autocomplete="off" checked>
+                            <input type="radio" class="btn-check" name="game_mode" id="vs_ai" value="0" autocomplete="off" checked onchange="isTwoPlayerMode()">
                             
                             <label class="btn btn-outline-light" for="vs_ai">
                                 <img src="resources/player_vs_ai.png" alt="Player vs AI" width="50" style="border-radius: 5px;">
@@ -66,7 +66,7 @@
                         </div>
 
                         <div class="mx-2">
-                            <input type="radio" class="btn-check" name="game_mode" id="vs_player" value="1" autocomplete="off">
+                            <input type="radio" class="btn-check" name="game_mode" id="vs_player" value="1" autocomplete="off" onchange="isTwoPlayerMode()">
 
                             <label class="btn btn-outline-light" for="vs_player">
                                 <img src="resources/player_vs_player.png" alt="Player vs Player" width="50" style="border-radius: 5px;">
@@ -76,19 +76,19 @@
                 </div>
     
                 <div class="mb-3">
-                    <label class="form-label d-block">Select Color:</label>
+                    <label class="form-label d-block" style="user-select: none;">Select Color:</label>
                     <div class="btn-group" role="group" aria-label="Player Color">
-                        <input type="radio" class="btn-check" name="player_color" id="white" value="white" autocomplete="off" checked>
+                        <input type="radio" class="btn-check" name="player_color" id="white" value="WHITE" autocomplete="off" checked>
                         <label class="btn btn-outline-light" for="white">
                             <img src="resources/pieces/w_k.png" alt="White" width="50">
                         </label>
                         
-                        <input type="radio" class="btn-check" name="player_color" id="black" value="black" autocomplete="off">
+                        <input type="radio" class="btn-check" name="player_color" id="black" value="BLACK" autocomplete="off">
                         <label class="btn btn-outline-light" for="black">
                             <img src="resources/pieces/b_k.png" alt="Black" width="50">
                         </label>
                         
-                        <input type="radio" class="btn-check" name="player_color" id="random" value="random" autocomplete="off">
+                        <input type="radio" class="btn-check" name="player_color" id="random" value="RANDOM" autocomplete="off">
                         <label class="btn btn-outline-light" for="random">
                             <img src="resources/dice.png" alt="Random" width="50">
                         </label>
@@ -105,8 +105,37 @@
             const gameMode = document.querySelector('input[name="game_mode"]:checked').value;
             const playerColor = document.querySelector('input[name="player_color"]:checked').value;
             
-            window.location.href = `game.php?mode=${gameMode}&color=${playerColor}`;
+            window.location.href = `game.php?game_mode=${gameMode}&player_color=${playerColor}`;
         });
+
+        function isTwoPlayerMode() {
+            let radioBtn = document.getElementById("vs_player");
+
+            if (radioBtn.checked) {
+                disableColorSelectors();
+            }else{
+                enableColorSelectors();
+            }
+        }
+
+        function disableColorSelectors() {
+            const colorRadios = document.querySelectorAll('input[name="player_color"]');
+
+            colorRadios.forEach((radioBtn, index) => {
+                if (index === 0) {
+                    radioBtn.checked = true; 
+                }
+                radioBtn.disabled = true;
+            });
+        }
+
+        function enableColorSelectors() {
+            const colorRadios = document.querySelectorAll('input[name="player_color"]');
+
+            colorRadios.forEach((radioBtn, index) => {
+                radioBtn.disabled = false;
+            });
+        }
     </script>
     
 </body>

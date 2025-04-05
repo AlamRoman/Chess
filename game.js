@@ -29,8 +29,28 @@ const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 
 let GAME_TYPE = document.getElementById("game_type").value;
 
-let player_color = WHITE;
-let computer_color = BLACK;
+console.log(GAME_TYPE);
+
+//default colors
+let player_color;
+let computer_color;
+
+if (document.getElementById("player_color").value == "WHITE") {
+    player_color = WHITE;
+    computer_color = BLACK;
+}else if (document.getElementById("player_color").value == "BLACK") {
+    player_color = BLACK;
+    computer_color = WHITE;
+}else{//random color
+
+    if (Math.random() < 0.5) {
+        player_color = WHITE;
+        computer_color = BLACK; 
+    }else{
+        player_color = BLACK;
+        computer_color = WHITE;
+    }
+}
 
 //hashmap with pieces name and their images
 let pieces_img = new Map();
@@ -146,10 +166,10 @@ const pieceSquareTablesEndGame = {
     P: [
         0,   0,   0,   0,   0,   0,   0,   0,
         100, 100, 100, 100, 100, 100, 100, 100,
-         80,  80,  80,  80,  80,  80,  80,  80,
-         60,  60,  60,  60,  60,  60,  60,  60,
-         40,  40,  40,  40,  40,  40,  40,  40,
-         20,  20,  20,  20,  20,  20,  20,  20,
+         84,  84,  84,  84,  84,  84,  84,  84,
+         63,  63,  63,  63,  63,  63,  63,  63,
+         42,  42,  42,  42,  42,  42,  42,  42,
+         21,  21,  21,  21,  21,  21,  21,  21,
          10,  10,  10,  10,  10,  10,  10,  10,
           0,   0,   0,   0,   0,   0,   0,   0
     ],
