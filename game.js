@@ -5,7 +5,7 @@ const WHITE = "w";
 const BLACK = "b";
 const PIECES_IMG_FOLDER_PATH = "resources/pieces/";
 
-const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+//const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 
 //king check test
 //const STARTING_FEN = "7K/2r5/q7/8/8/8/k7/8";
@@ -14,7 +14,7 @@ const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 //const STARTING_FEN = "8/3p4/k6K/8/4P3/8/8/8";
 
 //castling test
-//const STARTING_FEN = "r3k2r/8/1N6/pppppppp/PPPPPPPP/8/8/R3K2R";
+const STARTING_FEN = "r3k2r/8/1N6/pppppppp/PPPPPPPP/8/8/R3K2R";
 
 //pawn promotion test
 //const STARTING_FEN = "1n1b4/7P/8/8/R7/8/3p4/2N1B3";
@@ -96,20 +96,20 @@ const pieceSquareTablesMiddleGame = {
         5,   5,  10,  25,  25,  10,   5,   5,
         0,   0,   0,  20,  20,   0,   0,   0,
         5,  -5, -10,   0,   0, -10,  -5,   5,
-        5,  10,  10, -20, -20,  10,  10,   5,
+        5,  10,  10, -50, -50,  10,  10,   5,
         0,   0,   0,   0,   0,   0,   0,   0
     ],
 
     // Knight Position Table
     N: [
-        -50, -40, -30, -30, -30, -30, -40, -50,
+        -50, -35, -30, -30, -30, -30, -35, -50,
         -40, -20,   0,   5,   5,   0, -20, -40,
         -30,   0,  10,  15,  15,  10,   0, -30,
         -30,   5,  15,  20,  20,  15,   5, -30,
         -30,   5,  15,  20,  20,  15,   5, -30,
         -30,   0,  10,  15,  15,  10,   0, -30,
         -40, -20,   0,   0,   0,   0, -20, -40,
-        -50, -40, -30, -30, -30, -30, -40, -50
+        -50, -35, -30, -30, -30, -30, -35, -50
     ],
 
     // Bishop Position Table
@@ -118,7 +118,7 @@ const pieceSquareTablesMiddleGame = {
         -10,   5,   0,   0,   0,   0,   5, -10,
         -10,  10,  10,  10,  10,  10,  10, -10,
         -10,   0,  10,  15,  15,  10,   0, -10,
-        -10,   5,   5,  15,  15,   5,   5, -10,
+        -10,   5,   8,  15,  15,   8,   5, -10,
         -10,   0,   5,  10,  10,   5,   0, -10,
         -10,   0,   0,   0,   0,   0,   0, -10,
         -20, -10, -10, -10, -10, -10, -10, -20
@@ -1142,6 +1142,7 @@ function isSquareUnderAttack(pieceColor, board, square) {
     const originalPiece = board[square];
     board[square] = (pieceColor === WHITE) ? "K" : "k";
     const isAttacked = isKingInCheck(pieceColor, board);
+    console.log("sds", isAttacked);
     board[square] = originalPiece;
     return isAttacked;
 }
@@ -1758,9 +1759,9 @@ function generate_moves(piece, position, game_board, onlyCaptureMoves=false) {
 
         //castling
         
-        let your_back_rank = (pieceColor == WHITE) ? 7 : 0;
-        let your_king_side_castling_right = (pieceColor == WHITE) ? game_board.castling_rights.white_king_side : game_board.castling_rights.black_king_side;
-        let your_queen_side_castling_right = (pieceColor == WHITE) ? game_board.castling_rights.white_queen_side : game_board.castling_rights.black_queen_side;
+        let your_back_rank = (pieceColor == "w") ? 7 : 0;
+        let your_king_side_castling_right = (pieceColor == "w") ? game_board.castling_rights.white_king_side : game_board.castling_rights.black_king_side;
+        let your_queen_side_castling_right = (pieceColor == "w") ? game_board.castling_rights.white_queen_side : game_board.castling_rights.black_queen_side;
         
         /*
         if (y == your_back_rank && (your_king_side_castiling_right || your_queen_side_castling_right) && !isKingInCheck(pieceColor, board)) {
@@ -1824,7 +1825,9 @@ function generate_moves(piece, position, game_board, onlyCaptureMoves=false) {
             if (your_king_side_castling_right &&
                 board[row_col_to_position(y, x + 1)] === "" &&
                 board[row_col_to_position(y, x + 2)] === "" &&
-                board[row_col_to_position(y, 7)] === ((pieceColor === WHITE) ? "R" : "r")) {
+                board[row_col_to_position(y, 7)] === ((pieceColor === "w") ? "R" : "r")) {
+
+                    console.log(isSquareUnderAttack(pieceColor, board, row_col_to_position(y, x + 1)));
 
                 // Check if the squares the king moves over are safe
                 if (!isSquareUnderAttack(pieceColor, board, row_col_to_position(y, x + 1)) &&
@@ -1844,7 +1847,7 @@ function generate_moves(piece, position, game_board, onlyCaptureMoves=false) {
                 board[row_col_to_position(y, x - 1)] === "" &&
                 board[row_col_to_position(y, x - 2)] === "" &&
                 board[row_col_to_position(y, x - 3)] === "" &&
-                board[row_col_to_position(y, 0)] === ((pieceColor === WHITE) ? "R" : "r")) {
+                board[row_col_to_position(y, 0)] === ((pieceColor === "w") ? "R" : "r")) {
 
                 // Check if the squares the king moves over are safe
                 if (!isSquareUnderAttack(pieceColor, board, row_col_to_position(y, x - 1)) &&
