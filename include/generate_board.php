@@ -12,7 +12,7 @@
             }else{
                 $color = 'black';
             }
-            $id = 'id="sq'.($i*8)+$j.'"';
+            $id = 'id="sq'.($i*8 + $j).'"';
             $content .= "\t\t<td $id class=\"square $color\"></td>\n";
         }
 
