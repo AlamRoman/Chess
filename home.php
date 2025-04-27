@@ -10,7 +10,7 @@
 
     <style>
         body {
-            background: url('resources/bg_4.jpg') no-repeat center center fixed;
+            background: url('resources/bg_menu.webp') no-repeat center center fixed;
             background-size: cover;
         }
         .card {
