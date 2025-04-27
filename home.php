@@ -61,7 +61,7 @@
                             <input type="radio" class="btn-check" name="game_mode" id="vs_ai" value="0" autocomplete="off" checked onchange="isTwoPlayerMode()">
                             
                             <label class="btn btn-outline-light" for="vs_ai">
-                                <img src="resources/player_vs_ai.png" alt="Player vs AI" width="50" style="border-radius: 5px;">
+                                <img src="resources/player_vs_ai.png" title="Player vs AI" alt="Player vs AI" width="50" style="border-radius: 5px;">
                             </label>
                         </div>
 
@@ -69,7 +69,7 @@
                             <input type="radio" class="btn-check" name="game_mode" id="vs_player" value="1" autocomplete="off" onchange="isTwoPlayerMode()">
 
                             <label class="btn btn-outline-light" for="vs_player">
-                                <img src="resources/player_vs_player.png" alt="Player vs Player" width="50" style="border-radius: 5px;">
+                                <img src="resources/player_vs_player.png" title="Player vs Player" alt="Player vs Player" width="50" style="border-radius: 5px;">
                             </label>
                         </div>
                     </div>
