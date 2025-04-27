@@ -36,7 +36,14 @@
         </div>
     </div>
 
-    <script src="game.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/computer_move.js"></script>
+    <script src="js/functions.js"></script>
+    <script src="js/generate_moves.js"></script>
+    <script src="js/make_moves.js"></script>
+    <script src="js/piece_square_tables.js"></script>
+    <script src="js/update_view.js"></script>
+    <script src="js/game.js"></script>
     
 </body>
 </html>
