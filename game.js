@@ -5,7 +5,7 @@ const WHITE = "w";
 const BLACK = "b";
 const PIECES_IMG_FOLDER_PATH = "resources/pieces/";
 
-//const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+const STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 
 //king check test
 //const STARTING_FEN = "7K/2r5/q7/8/8/8/k7/8";
@@ -14,7 +14,7 @@ const PIECES_IMG_FOLDER_PATH = "resources/pieces/";
 //const STARTING_FEN = "8/3p4/k6K/8/4P3/8/8/8";
 
 //castling test
-const STARTING_FEN = "r3k2r/8/1N6/pppppppp/PPPPPPPP/8/8/R3K2R";
+//const STARTING_FEN = "r3k2r/8/1N6/pppppppp/PPPPPPPP/8/8/R3K2R";
 
 //pawn promotion test
 //const STARTING_FEN = "1n1b4/7P/8/8/R7/8/3p4/2N1B3";
@@ -1138,13 +1138,85 @@ function check_and_update_castling_rights(piece_to_move, from, game_board){
 }
 
 function isSquareUnderAttack(pieceColor, board, square) {
-    // Simulate placing a king on the square and check if it is in check
-    const originalPiece = board[square];
-    board[square] = (pieceColor === WHITE) ? "K" : "k";
-    const isAttacked = isKingInCheck(pieceColor, board);
-    console.log("sds", isAttacked);
-    board[square] = originalPiece;
-    return isAttacked;
+
+    let x = square % 8;
+    let y = Math.floor(square/8);
+
+    const opponentPawn = (pieceColor == WHITE) ? 'p' : 'P';
+    const opponentKnight = (pieceColor == WHITE) ? 'n' : 'N';
+    const opponentRook = (pieceColor == WHITE) ? 'r' : 'R';
+    const opponentBishop = (pieceColor == WHITE) ? 'b' : 'B';
+    const opponentQueen = (pieceColor == WHITE) ? 'q' : 'Q';
+    const opponentKing = (pieceColor == WHITE) ? 'k' : 'K';
+
+    // Check for pawn attacks
+    let pawnDirection = (pieceColor == WHITE) ? -1 : 1; // For white piece opponent pawn will be up (-1), and for black piece down (1)
+    //if there is an enemy pawn in left
+    if (isValidPosition(x - 1, y + pawnDirection) && board[row_col_to_position(y + pawnDirection, x - 1)] == opponentPawn) return true;
+    //if there is an enemy pawn in right
+    if (isValidPosition(x + 1, y + pawnDirection) && board[row_col_to_position(y + pawnDirection, x + 1)] == opponentPawn) return true;
+
+
+    //check for knights attack
+    const knightMoves = [[-2, -1], [-2, 1], [-1, -2], [-1, 2],[1, -2], [1, 2], [2, -1], [2, 1]];
+    
+    for (const [rowOffset, colOffset] of knightMoves) {
+        const row = y + rowOffset;
+        const col = x + colOffset;
+        if (isValidPosition(col, row) && board[row_col_to_position(row, col)] == opponentKnight) return true;
+    }
+
+    // Check for rook/queen attacks (horizontal/vertical)
+    const rookDirections = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+
+    for (const [rowDir, colDir] of rookDirections) {
+
+        for (let i = 1; i < 8; i++) {
+            const row = y + i * rowDir;
+            const col = x + i * colDir;
+
+            //check if the position is valid
+            if (!isValidPosition(col, row)){
+                break;
+            }else if (board[row_col_to_position(row, col)] == opponentRook || board[row_col_to_position(row, col)] == opponentQueen){
+                return true;
+            }else if (board[row_col_to_position(row, col)] != "") {//check if blocked by any other piece
+                break;
+            }
+        }
+    }
+
+    // Check for bishop/queen attacks (diagonal)
+    const bishopDirections = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+
+    for (const [rowDir, colDir] of bishopDirections) {
+        for (let i = 1; i < 8; i++) {
+            const row = y + i * rowDir;
+            const col = x + i * colDir;
+
+            //check if the position is valid
+            if (!isValidPosition(col, row)){
+                break;
+            }else if (board[row_col_to_position(row, col)] == opponentBishop || board[row_col_to_position(row, col)] == opponentQueen){
+                return true;
+            }else if (board[row_col_to_position(row, col)] != "") {//check if blocked by any other piece
+                break;
+            }
+        }
+    }
+
+    // Check for opponent king
+    const enemyKingMoves = [[-1, -1], [-1, 0], [-1, 1], [0, -1],[0, 1], [1, -1], [1, 0], [1, 1]];
+
+    for (const [rowOffset, colOffset] of enemyKingMoves) {
+        const row = y + rowOffset;
+        const col = x + colOffset;
+
+        if (isValidPosition(col, row) && board[row_col_to_position(row, col)] == opponentKing) return true;
+    }
+
+    return false;
+
 }
 
 function generate_moves(piece, position, game_board, onlyCaptureMoves=false) {
@@ -1827,8 +1899,6 @@ function generate_moves(piece, position, game_board, onlyCaptureMoves=false) {
                 board[row_col_to_position(y, x + 2)] === "" &&
                 board[row_col_to_position(y, 7)] === ((pieceColor === "w") ? "R" : "r")) {
 
-                    console.log(isSquareUnderAttack(pieceColor, board, row_col_to_position(y, x + 1)));
-
                 // Check if the squares the king moves over are safe
                 if (!isSquareUnderAttack(pieceColor, board, row_col_to_position(y, x + 1)) &&
                     !isSquareUnderAttack(pieceColor, board, row_col_to_position(y, x + 2))) {
@@ -1916,91 +1986,15 @@ function makeTemporaryMoveAndCheck(piece, pieceColor, position, newIndex, moves,
     return false;
 }
 
-function isKingInCheck(kingColor, b){
+function isKingInCheck(kingColor, board){
 
-    const kingPosition = (kingColor == "w") ? findPiecePosition("K", b) : findPiecePosition("k", b);
+    const kingPosition = (kingColor == "w") ? findPiecePosition("K", board) : findPiecePosition("k", board);
 
     if (kingPosition == -1) {//if there is no king return
         return;
     }
 
-    const king_x = kingPosition % 8; //col
-    const king_y = Math.floor(kingPosition / 8); //row
-
-    const opponentPawn = (kingColor == 'w') ? 'p' : 'P';
-    const opponentKnight = (kingColor == 'w') ? 'n' : 'N';
-    const opponentRook = (kingColor == 'w') ? 'r' : 'R';
-    const opponentBishop = (kingColor == 'w') ? 'b' : 'B';
-    const opponentQueen = (kingColor == 'w') ? 'q' : 'Q';
-    const opponentKing = (kingColor == 'w') ? 'k' : 'K';
-
-    // Check for pawn attacks
-    let pawnDirection = (kingColor == 'w') ? -1 : 1; // For white king opponent pawn will be up (-1), and for black king down (1)
-    //if there is an enemy pawn in left
-    if (isValidPosition(king_x - 1, king_y + pawnDirection) && b[row_col_to_position(king_y + pawnDirection, king_x - 1)] == opponentPawn) return true;
-    //if there is an enemy pawn in right
-    if (isValidPosition(king_x + 1, king_y + pawnDirection) && b[row_col_to_position(king_y + pawnDirection, king_x + 1)] == opponentPawn) return true;
-
-
-    //check for knights attack
-    const knightMoves = [[-2, -1], [-2, 1], [-1, -2], [-1, 2],[1, -2], [1, 2], [2, -1], [2, 1]];
-    
-    for (const [rowOffset, colOffset] of knightMoves) {
-        const row = king_y + rowOffset;
-        const col = king_x + colOffset;
-        if (isValidPosition(col, row) && b[row_col_to_position(row, col)] == opponentKnight) return true;
-    }
-
-    // Check for rook/queen attacks (horizontal/vertical)
-    const rookDirections = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-
-    for (const [rowDir, colDir] of rookDirections) {
-
-        for (let i = 1; i < 8; i++) {
-            const row = king_y + i * rowDir;
-            const col = king_x + i * colDir;
-
-            //check if the position is valid
-            if (!isValidPosition(col, row)){
-                break;
-            }else if (b[row_col_to_position(row, col)] == opponentRook || b[row_col_to_position(row, col)] == opponentQueen){
-                return true;
-            }else if (b[row_col_to_position(row, col)] != "") {//check if blocked by any other piece
-                break;
-            }
-        }
-    }
-
-    // Check for bishop/queen attacks (diagonal)
-    const bishopDirections = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
-
-    for (const [rowDir, colDir] of bishopDirections) {
-        for (let i = 1; i < 8; i++) {
-            const row = king_y + i * rowDir;
-            const col = king_x + i * colDir;
-
-            //check if the position is valid
-            if (!isValidPosition(col, row)){
-                break;
-            }else if (b[row_col_to_position(row, col)] == opponentBishop || b[row_col_to_position(row, col)] == opponentQueen){
-                return true;
-            }else if (b[row_col_to_position(row, col)] != "") {//check if blocked by any other piece
-                break;
-            }
-        }
-    }
-
-    // Check for opponent king
-    const enemyKingMoves = [[-1, -1], [-1, 0], [-1, 1], [0, -1],[0, 1], [1, -1], [1, 0], [1, 1]];
-
-    for (const [rowOffset, colOffset] of enemyKingMoves) {
-        const row = king_y + rowOffset;
-        const col = king_x + colOffset;
-
-        if (isValidPosition(col, row) && b[row_col_to_position(row, col)] == opponentKing) return true;
-    }
-
-    return false;
+    return isSquareUnderAttack(kingColor,board,kingPosition);
 }
 
 function findPiecePosition(piece, board){
