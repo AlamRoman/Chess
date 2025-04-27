@@ -4,5 +4,5 @@ window.config = {
         DEVELOPMENT: 'development',
         PRODUCTION: 'production'
     },
-    currentEnvironment: 'development',
+    currentEnvironment: 'production',
 };
