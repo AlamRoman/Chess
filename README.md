@@ -1,7 +1,7 @@
 
 # ♟️ King-Fisher Chess Engine
 
-<div align="center"> <img src="resources/logo.png" width="400" alt="Chess Interface Preview"> </div>
+<div align="center"> <img src="resources/logo.png" width="300" alt="Kingfisher logo"> </div>
 
 
 A JavaScript chess implementation featuring an AI opponent powered by Minimax with Alpha-Beta pruning. Utilizes advanced move ordering (history heuristic, killer moves) and position evaluation (material balance, piece-square tables). Includes a responsive web interface with legal move validation, pawn promotion, and game state tracking.
