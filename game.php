@@ -6,8 +6,16 @@
     <title>Chess [King-Fisher]</title>
     <link rel="icon" href="resources/logo.png" type="image/png" />
     <link rel="stylesheet" href="css/style.css"/>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 </head>
 <body>
+
+    <a href="home.php" class="btn btn-light rounded-circle border-0 back-btn" style="position: absolute; top: 10px; left: 10px; z-index: 1000; background-color: #ffce9e;">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+
 
     <!--
         0: vs computer
@@ -22,7 +30,7 @@
     -->
     <input type="hidden" id="player_color" value="<?php echo (isset($_GET["player_color"])) ? $_GET["player_color"] : "RANDOM"; ?>">
 
-    <div class="container">
+    <div class="container mt-3">
         <div class="board_container">
             <?php include "include/generate_board.php"; ?>
         </div>
@@ -30,7 +38,7 @@
         <div id="captured_piece_container">
             <div id="black_captured_pieces">
             </div>
-            <hr/>
+            <hr class="bg-light" style="height: 2px; width: 100%; margin: 0;"/>
             <div id="white_captured_pieces">
             </div>
         </div>
