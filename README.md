@@ -60,4 +60,4 @@ Try King-Fisher Chess engine:  [**Play Now →**](https://alamroman.altervista.o
 
 ## License
 
-MIT License - See [LICENSE](https://chat.deepseek.com/a/chat/s/LICENSE) for details.
+MIT License - See [LICENSE](./LICENSE) for details.
